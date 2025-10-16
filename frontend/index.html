@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wellness Arcade</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="ghibli-header">
+        <h1>🌿 Wellness Arcade 💧</h1>
+        <p>Mindful Habits to ensure a healthy life</p>
+    </header>
+
+    <div class="arcade-container">
+
+        <section class="dashboard">
+            <h2>Your Wellness Stats</h2>
+            <div class="stat-box">
+                <p>💧 Water Glasses Today: <span id="waterCount">0</span>/8</p>
+            </div>
+            <div class="stat-box">
+                <p>🦷 Brushing Today: <span id="brushingCount">0</span>/2</p>
+            </div>
+            <div class="stat-box">
+                <p>🧘 Breathing Sessions: <span id="breathingCount">0</span></p>
+            </div>
+            <div class="stat-box">
+                <p>🧠 Brain Sprint High Score: <span id="brainScore">0</span></p>
+            </div>
+            
+            <div class="dashboard-separator"></div>
+
+            <div class="game-selection-grid">
+                <div class="game-box" data-game="hydration">
+                    <span class="box-icon">💧</span>
+                    <h3>Hydration Hero</h3>
+                    <p>Track your water intake.</p>
+                </div>
+                <div class="game-box" data-game="smile">
+                    <span class="box-icon">🦷</span>
+                    <h3>Sparkle Smile</h3>
+                    <p>Ensure dental hygiene.</p>
+                </div>
+                <div class="game-box" data-game="breathe">
+                    <span class="box-icon">🧘</span>
+                    <h3>Breathe & Balance</h3>
+                    <p>Lower stress with calm breaths.</p>
+                </div>
+                <div class="game-box" data-game="brain">
+                    <span class="box-icon">🧠</span>
+                    <h3>Brain Sprint</h3>
+                    <p>Test your short-term memory.</p>
+                </div>
+                <div class="game-box" data-game="mood">
+                    <span class="box-icon">😊</span>
+                    <h3>Mood Watch</h3>
+                    <p>Build emotional awareness.</p>
+                </div>
+                <div class="game-box" data-game="affirmation">
+                    <span class="box-icon">✨</span>
+                    <h3>Affirmation Builder</h3>
+                    <p>Create uplifting messages.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="main-screen-content">
+            <h2 id="main-screen-title">Welcome to the Wellness Arcade!</h2>
+            <p>Select a game from the left to begin your healthy habit adventure.</p>
+            
+            <div id="game-content-area">
+                </div>
+        </section>
+
+    </div> 
+
+    <!-- Authentication Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <div class="auth-tabs">
+                <button class="tab-button active" data-tab="login">Login</button>
+                <button class="tab-button" data-tab="register">Register</button>
+            </div>
+            
+            <div id="loginTab" class="tab-content active">
+                <h3>Welcome Back!</h3>
+                <form id="loginForm">
+                    <input type="text" id="loginUsername" placeholder="Username" required>
+                    <input type="password" id="loginPassword" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+            </div>
+            
+            <div id="registerTab" class="tab-content">
+                <h3>Join Wellness Arcade!</h3>
+                <form id="registerForm">
+                    <input type="text" id="registerUsername" placeholder="Username" required>
+                    <input type="email" id="registerEmail" placeholder="Email" required>
+                    <input type="password" id="registerPassword" placeholder="Password" required>
+                    <button type="submit">Register</button>
+                </form>
+            </div>
+            
+            <div id="authStatus" class="auth-status"></div>
+        </div>
+    </div>
+
+    <script src="api-service.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

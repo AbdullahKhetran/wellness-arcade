@@ -1,0 +1,747 @@
+let waterLogged = 0;
+let brushLogged = { morning: false, night: false };
+let breathingSessions = 0;
+let brainHighScore = 0;
+let currentBrainSequence = [];
+let playerSequence = [];
+let isPlayerTurn = false;
+let sprintCurrentScore = 0;
+let breathingInterval = null;
+let currentMoodSession = null;
+let affirmationWords = [];
+let userAffirmation = [];
+const WATER_GOAL = 8;
+
+// Load data from localStorage on page load
+function loadStoredData() {
+    waterLogged = parseInt(localStorage.getItem('waterLogged')) || 0;
+    brushLogged.morning = localStorage.getItem('brushMorning') === 'true';
+    brushLogged.night = localStorage.getItem('brushNight') === 'true';
+    breathingSessions = parseInt(localStorage.getItem('breathingSessions')) || 0;
+    brainHighScore = parseInt(localStorage.getItem('brainHighScore')) || 0;
+}
+
+// Initialize data loading
+loadStoredData();
+
+// Authentication state
+let isAuthenticated = false;
+let currentUser = null;
+
+// Initialize authentication
+async function initAuth() {
+    if (api.isAuthenticated()) {
+        try {
+            currentUser = await api.getUserProfile();
+            isAuthenticated = true;
+            hideAuthModal();
+            showUserWelcome();
+        } catch (error) {
+            console.error('Auth check failed:', error);
+            api.logout();
+            showAuthModal();
+        }
+    } else {
+        showAuthModal();
+    }
+}
+
+function showAuthModal() {
+    document.getElementById('authModal').style.display = 'block';
+}
+
+function hideAuthModal() {
+    document.getElementById('authModal').style.display = 'none';
+}
+
+function showUserWelcome() {
+    if (currentUser) {
+        const header = document.querySelector('.ghibli-header p');
+        header.textContent = `Welcome back, ${currentUser.username}! Mindful Habits to ensure a healthy life`;
+    }
+}
+
+const playSound = (emoji) => {
+    
+    console.log(emoji); 
+};
+
+function updateDashboard() {
+    document.getElementById('waterCount').textContent = waterLogged;
+    document.getElementById('brushingCount').textContent = `${(brushLogged.morning ? 1 : 0) + (brushLogged.night ? 1 : 0)}/2`;
+    document.getElementById('breathingCount').textContent = breathingSessions;
+    document.getElementById('brainScore').textContent = brainHighScore;
+
+    localStorage.setItem('waterLogged', waterLogged);
+    localStorage.setItem('brushMorning', brushLogged.morning);
+    localStorage.setItem('brushNight', brushLogged.night);
+    localStorage.setItem('breathingSessions', breathingSessions);
+    localStorage.setItem('brainHighScore', brainHighScore);
+}
+
+
+const BACK_BUTTON_HTML = '<button id="backToDashboardBtn" class="back-button">← Back to Dashboard</button>';
+
+const gameTemplates = {
+    hydration: `
+        <h3 class="game-page-title">Hydration Hero 💧</h3>
+        <div class="scientific-advice">
+            Scientific Advice: *Dehydration impacts cognitive function.* Maintaining fluid balance helps sustain energy levels and focus throughout the day.
+        </div>
+        <div class="plant-container">
+            <p id="plantStatus">Your little sprout is thirsty...</p>
+            <div id="plant" class="plant-level-0"></div>
+        </div>
+        <button id="logWaterBtn">Log 1 Glass (✨)</button>
+        ${BACK_BUTTON_HTML}
+    `,
+    smile: `
+        <h3 class="game-page-title">Sparkle Smile 🦷</h3>
+        <div class="scientific-advice">
+            Scientific Advice: *Oral hygiene is linked to heart health.* Regular brushing reduces chronic inflammation that can contribute to cardiovascular issues.
+        </div>
+        <div class="character-container">
+            <p id="smileStatus">Keep those teeth sparkling!</p>
+            <div id="smile" class="smile-level-0"></div>
+        </div>
+        <button id="logBrushMorningBtn">Log Morning Brush</button>
+        <button id="logBrushNightBtn">Log Evening Brush</button>
+        ${BACK_BUTTON_HTML}
+    `,
+    breathe: `
+        <h3 class="game-page-title">Breathe & Balance 🧘</h3>
+        <div class="scientific-advice">
+            Scientific Advice: *Diaphragmatic breathing activates the vagus nerve*, which is key to stimulating the body's parasympathetic (rest and digest) system, lowering heart rate and cortisol.
+        </div>
+        <div id="breathing-area">
+            <div id="breathing-cue">Start</div>
+            <div id="breathing-circle" class="breathing-paused"></div>
+        </div>
+        <p id="breathing-timer">Time: 0s</p>
+        <button id="startBreathingBtn">Start 30s Exercise (🎶)</button>
+        ${BACK_BUTTON_HTML}
+    `,
+    brain: `
+        <h3 class="game-page-title">Brain Sprint 🧠</h3>
+        <div class="scientific-advice">
+            Scientific Advice: *Cognitive stimulation supports neuroplasticity.* Short, focused memory tasks help maintain attention and enhance the brain's ability to form new neural connections.
+        </div>
+        <div id="sprint-area">
+            <p>Current Score: <span id="sprint-current-score">0</span></p>
+            <div id="sprint-board">
+                <button class="sprint-tile" data-id="1"></button>
+                <button class="sprint-tile" data-id="2"></button>
+                <button class="sprint-tile" data-id="3"></button>
+                <button class="sprint-tile" data-id="4"></button>
+            </div>
+            <p id="sprint-message">Press Start to begin!</p>
+        </div>
+        <button id="startSprintBtn">Start Sprint (▶️)</button>
+        ${BACK_BUTTON_HTML}
+    `,
+    mood: `
+        <h3 class="game-page-title">Mood Watch 😊</h3>
+        <div class="scientific-advice">
+            Scientific Advice: *Emotional awareness is linked to better mental health.* Recognizing and naming emotions helps regulate stress responses and improves overall well-being.
+        </div>
+        <div id="mood-area">
+            <div id="mood-scenario">
+                <p id="scenario-text">Loading scenario...</p>
+            </div>
+            <div id="mood-options">
+                <button class="mood-option" data-mood="happy">😊 Happy</button>
+                <button class="mood-option" data-mood="sad">😢 Sad</button>
+                <button class="mood-option" data-mood="anxious">😰 Anxious</button>
+                <button class="mood-option" data-mood="calm">😌 Calm</button>
+                <button class="mood-option" data-mood="excited">🤩 Excited</button>
+                <button class="mood-option" data-mood="frustrated">😤 Frustrated</button>
+            </div>
+            <div id="mood-tip" class="mood-tip hidden">
+                <p id="tip-text"></p>
+            </div>
+        </div>
+        <button id="nextMoodBtn">Next Scenario</button>
+        ${BACK_BUTTON_HTML}
+    `,
+    affirmation: `
+        <h3 class="game-page-title">Affirmation Builder ✨</h3>
+        <div class="scientific-advice">
+            Scientific Advice: *Positive affirmations can rewire neural pathways.* Regular practice of self-affirmation has been shown to reduce stress and improve self-esteem.
+        </div>
+        <div id="affirmation-area">
+            <div id="word-bank">
+                <h4>Word Bank:</h4>
+                <div id="available-words"></div>
+            </div>
+            <div id="affirmation-builder">
+                <h4>Your Affirmation:</h4>
+                <div id="selected-words"></div>
+                <button id="clear-affirmation">Clear</button>
+            </div>
+            <div id="generated-affirmation" class="hidden">
+                <h4>Generated Affirmation:</h4>
+                <p id="final-affirmation"></p>
+            </div>
+        </div>
+        <button id="generate-affirmation">Generate Affirmation</button>
+        ${BACK_BUTTON_HTML}
+    `
+};
+
+
+const mainContentArea = document.getElementById('game-content-area');
+const mainScreenTitle = document.getElementById('main-screen-title');
+const gameBoxes = document.querySelectorAll('.game-box');
+
+
+function loadDashboard() {
+
+    if (breathingInterval) {
+        clearInterval(breathingInterval);
+        breathingInterval = null;
+    }
+    
+    
+    mainScreenTitle.textContent = "Welcome to the Wellness Arcade!";
+    mainContentArea.innerHTML = `
+        <img src="https://via.placeholder.com/200x150/f0f8ff/5a7d95?text=Cute+Forest" alt="Cute forest scene" class="welcome-image">
+        <p>Your journey to mindful habits starts here!</p>
+        <p>Pick a game from the left dashboard to get started and boost your wellness!</p>
+    `; 
+    updateDashboard();
+}
+
+
+function loadGame(gameName) {
+    // Clear any running breathing interval when switching pages
+    if (breathingInterval) {
+        clearInterval(breathingInterval);
+        breathingInterval = null;
+    }
+
+
+    mainContentArea.innerHTML = gameTemplates[gameName];
+    const mainScreenTitle = document.getElementById('main-screen-title');
+    mainScreenTitle.textContent = gameName.charAt(0).toUpperCase() + gameName.slice(1) + " Game";
+
+    // Attach back button listener
+    const backBtn = document.getElementById('backToDashboardBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', loadDashboard);
+    }
+
+    // --- Hydration Hero Setup ---
+    if (gameName === 'hydration') {
+        document.getElementById('logWaterBtn').addEventListener('click', handleWaterLogWithAPI);
+        updateHydrationView();
+    }
+
+    // --- Sparkle Smile Setup ---
+    if (gameName === 'smile') {
+        document.getElementById('logBrushMorningBtn').addEventListener('click', handleMorningBrushWithAPI);
+        document.getElementById('logBrushNightBtn').addEventListener('click', handleNightBrushWithAPI);
+        updateSmileView();
+    }
+    
+    // --- Breathe & Balance Setup ---
+    if (gameName === 'breathe') {
+        document.getElementById('startBreathingBtn').addEventListener('click', startBreathing);
+        document.getElementById('breathing-circle').className = 'breathing-paused';
+        document.getElementById('breathing-cue').textContent = 'Start';
+        document.getElementById('breathing-timer').textContent = 'Time: 0s';
+    }
+
+    // --- Brain Sprint Setup ---
+    if (gameName === 'brain') {
+        document.getElementById('startSprintBtn').addEventListener('click', startGame);
+        sprintCurrentScore = 0; 
+        document.getElementById('sprint-current-score').textContent = sprintCurrentScore;
+        document.querySelectorAll('.sprint-tile').forEach(tile => tile.addEventListener('click', handleTileClick));
+    }
+
+    // --- Mood Watch Setup ---
+    if (gameName === 'mood') {
+        document.getElementById('nextMoodBtn').addEventListener('click', loadMoodScenario);
+        document.querySelectorAll('.mood-option').forEach(option => 
+            option.addEventListener('click', handleMoodSelection));
+        loadMoodScenario();
+    }
+
+    // --- Affirmation Builder Setup ---
+    if (gameName === 'affirmation') {
+        document.getElementById('generate-affirmation').addEventListener('click', generateAffirmation);
+        document.getElementById('clear-affirmation').addEventListener('click', clearAffirmation);
+        loadAffirmationWords();
+    }
+}
+
+// Add click listeners to the game selection boxes
+gameBoxes.forEach(box => {
+    box.addEventListener('click', () => {
+        const gameName = box.dataset.game; 
+        loadGame(gameName);
+    });
+});
+
+
+// --- 2. Hydration Hero Functions ---
+function updateHydrationView() {
+    const plantElement = document.getElementById('plant');
+    const plantStatusDisplay = document.getElementById('plantStatus');
+
+    let level = Math.min(Math.floor(waterLogged / 2), 4); 
+    plantElement.className = `plant-level-${level}`; 
+
+    if (waterLogged >= WATER_GOAL) {
+        plantStatusDisplay.textContent = "🥳 Fully Revived! You're a true Hydration Hero!";
+        playSound('✨');
+    } else if (waterLogged > 0) {
+        plantStatusDisplay.textContent = `🌱 Growing stronger! Need ${WATER_GOAL - waterLogged} more.`;
+    } else {
+        plantStatusDisplay.textContent = "Your little sprout is thirsty...";
+    }
+    updateDashboard();
+}
+
+function handleWaterLog() {
+    if (waterLogged < 12) { 
+        waterLogged++;
+        if (waterLogged === WATER_GOAL) {
+             alert("Goal Reached! You fully revived the plant! 🏆");
+        }
+        playSound('💧');
+    }
+    updateHydrationView();
+}
+
+
+// --- 3. Sparkle Smile Functions ---
+function updateSmileView() {
+    const smileElement = document.getElementById('smile');
+    const statusDisplay = document.getElementById('smileStatus');
+
+    let count = (brushLogged.morning ? 1 : 0) + (brushLogged.night ? 1 : 0);
+    
+    let emoji = '😐';
+    if (count === 1) emoji = '🙂';
+    if (count === 2) emoji = '😁';
+    smileElement.textContent = emoji;
+    
+    smileElement.style.borderColor = count === 2 ? '#4CAF50' : (count === 1 ? '#8cc63f' : '#ccc');
+    smileElement.style.boxShadow = count === 2 ? '0 0 15px #ffeb3b' : 'none'; 
+    
+    if (count === 2) {
+        statusDisplay.textContent = 'Maximum Sparkle! Teeth are happy!';
+        playSound('🌟');
+    } else if (count === 1) {
+        statusDisplay.textContent = 'Halfway there! Log your next brush.';
+    } else {
+        statusDisplay.textContent = 'Time to brush and make those teeth happy!';
+    }
+    updateDashboard();
+}
+
+function handleMorningBrush() {
+    if (!brushLogged.morning) {
+        brushLogged.morning = true;
+        updateSmileView();
+        alert("Morning routine complete! 😊");
+    }
+}
+
+function handleNightBrush() {
+    if (!brushLogged.night) {
+        brushLogged.night = true;
+        updateSmileView();
+        alert("Night routine complete! Good night, Sparkle Hero! 🌙");
+    }
+}
+
+// --- 4. Brain Sprint Functions ---
+function startGame() {
+    currentBrainSequence = [];
+    playerSequence = [];
+    isPlayerTurn = false;
+    sprintCurrentScore = 0;
+    document.getElementById('sprint-current-score').textContent = sprintCurrentScore;
+    document.getElementById('sprint-message').textContent = 'Watch the sequence...';
+    document.getElementById('startSprintBtn').disabled = true;
+    
+    setTimeout(() => {
+        addToSequence();
+    }, 1000);
+}
+
+function addToSequence() {
+    const newTile = Math.floor(Math.random() * 4) + 1;
+    currentBrainSequence.push(newTile);
+    
+    showSequence();
+}
+
+function showSequence() {
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < currentBrainSequence.length) {
+            const tile = document.querySelector(`[data-id="${currentBrainSequence[i]}"]`);
+            tile.classList.add('highlight');
+            setTimeout(() => {
+                tile.classList.remove('highlight');
+            }, 500);
+            i++;
+        } else {
+            clearInterval(interval);
+            setTimeout(() => {
+                isPlayerTurn = true;
+                document.getElementById('sprint-message').textContent = 'Your turn! Click the tiles in order.';
+            }, 500);
+        }
+    }, 600);
+}
+
+function handleTileClick(event) {
+    if (!isPlayerTurn) return;
+    
+    const clickedId = parseInt(event.target.dataset.id);
+    playerSequence.push(clickedId);
+    
+    // Check if the sequence is correct so far
+    const currentIndex = playerSequence.length - 1;
+    if (playerSequence[currentIndex] !== currentBrainSequence[currentIndex]) {
+        // Wrong sequence
+        document.getElementById('sprint-message').textContent = `Game Over! Score: ${sprintCurrentScore}`;
+        if (sprintCurrentScore > brainHighScore) {
+            brainHighScore = sprintCurrentScore;
+            updateDashboard();
+        }
+        document.getElementById('startSprintBtn').disabled = false;
+        isPlayerTurn = false;
+        return;
+    }
+    
+    // Check if sequence is complete
+    if (playerSequence.length === currentBrainSequence.length) {
+        sprintCurrentScore++;
+        document.getElementById('sprint-current-score').textContent = sprintCurrentScore;
+        document.getElementById('sprint-message').textContent = 'Correct! Next round...';
+        playerSequence = [];
+        isPlayerTurn = false;
+        
+        setTimeout(() => {
+            addToSequence();
+        }, 1500);
+    }
+}
+
+// --- 5. Breathe & Balance Functions ---
+function startBreathing() {
+    const button = document.getElementById('startBreathingBtn');
+    const circle = document.getElementById('breathing-circle');
+    const cue = document.getElementById('breathing-cue');
+    const timer = document.getElementById('breathing-timer');
+    
+    button.disabled = true;
+    button.textContent = 'Breathing...';
+    
+    let timeLeft = 30;
+    let isInhaling = true;
+    
+    const updateTimer = async () => {
+        timer.textContent = `Time: ${timeLeft}s`;
+        timeLeft--;
+        
+        if (timeLeft < 0) {
+            clearInterval(breathingInterval);
+            breathingInterval = null;
+            
+            // Log to API if authenticated
+            if (isAuthenticated) {
+                try {
+                    await api.logBreathing(30);
+                    breathingSessions++;
+                    updateDashboard();
+                    showAuthStatus('Breathing session logged!', 'success');
+                } catch (error) {
+                    console.error('Failed to log breathing:', error);
+                    breathingSessions++;
+                    updateDashboard();
+                }
+            } else {
+                breathingSessions++;
+                updateDashboard();
+            }
+            
+            circle.className = 'breathing-paused';
+            cue.textContent = 'Complete!';
+            button.disabled = false;
+            button.textContent = 'Start 30s Exercise (🎶)';
+            timer.textContent = 'Time: 0s';
+            
+            alert('Great job! You completed a breathing session! 🧘');
+            return;
+        }
+    };
+    
+    const breathingCycle = () => {
+        if (isInhaling) {
+            circle.className = 'breathing-in';
+            cue.textContent = 'Breathe In...';
+            isInhaling = false;
+        } else {
+            circle.className = 'breathing-out';
+            cue.textContent = 'Breathe Out...';
+            isInhaling = true;
+        }
+    };
+    
+    breathingInterval = setInterval(updateTimer, 1000);
+    setInterval(breathingCycle, 5000);
+    breathingCycle(); // Start immediately
+}
+
+// --- 6. Mood Watch Functions ---
+const moodScenarios = [
+    "You missed the bus this morning and had to walk to work in the rain.",
+    "Your friend surprised you with your favorite coffee.",
+    "You received a compliment from your boss about your recent project.",
+    "You're stuck in traffic and running late for an important meeting.",
+    "You found a $20 bill on the sidewalk.",
+    "Your favorite show was cancelled after one season.",
+    "You successfully completed a difficult task you've been working on.",
+    "You had a disagreement with a close friend.",
+    "You discovered a new hobby that you really enjoy.",
+    "You're feeling overwhelmed with too many responsibilities."
+];
+
+const moodTips = {
+    happy: "It's wonderful to feel happy! Try to savor these positive moments and share your joy with others.",
+    sad: "It's okay to feel sad sometimes. Consider talking to someone you trust or doing something that usually brings you comfort.",
+    anxious: "Anxiety is a normal emotion. Try deep breathing exercises or grounding techniques to help manage these feelings.",
+    calm: "Feeling calm is great for your well-being. This is a good time for reflection or mindfulness practices.",
+    excited: "Excitement can be energizing! Channel this positive energy into productive activities or creative pursuits.",
+    frustrated: "Frustration is a natural response. Try to identify what's causing it and take small steps to address the situation."
+};
+
+function loadMoodScenario() {
+    const randomScenario = moodScenarios[Math.floor(Math.random() * moodScenarios.length)];
+    document.getElementById('scenario-text').textContent = randomScenario;
+    document.getElementById('mood-tip').classList.add('hidden');
+    document.querySelectorAll('.mood-option').forEach(btn => btn.disabled = false);
+}
+
+function handleMoodSelection(event) {
+    const selectedMood = event.target.dataset.mood;
+    const tip = moodTips[selectedMood];
+    
+    document.getElementById('tip-text').textContent = tip;
+    document.getElementById('mood-tip').classList.remove('hidden');
+    
+    // Disable all mood buttons
+    document.querySelectorAll('.mood-option').forEach(btn => btn.disabled = true);
+    
+    // Highlight selected mood
+    event.target.style.backgroundColor = '#4CAF50';
+    event.target.style.color = 'white';
+}
+
+// --- 7. Affirmation Builder Functions ---
+const affirmationWordBank = [
+    "I", "am", "strong", "capable", "worthy", "loved", "brave", "confident", "peaceful", "grateful",
+    "will", "can", "deserve", "choose", "believe", "create", "achieve", "grow", "heal", "thrive",
+    "today", "always", "everyday", "moment", "journey", "life", "future", "present", "past", "now"
+];
+
+function loadAffirmationWords() {
+    const wordContainer = document.getElementById('available-words');
+    wordContainer.innerHTML = '';
+    
+    affirmationWordBank.forEach(word => {
+        const wordButton = document.createElement('button');
+        wordButton.textContent = word;
+        wordButton.className = 'word-button';
+        wordButton.addEventListener('click', () => addWordToAffirmation(word, wordButton));
+        wordContainer.appendChild(wordButton);
+    });
+}
+
+function addWordToAffirmation(word, button) {
+    userAffirmation.push(word);
+    updateAffirmationDisplay();
+    button.disabled = true;
+    button.style.opacity = '0.5';
+}
+
+function updateAffirmationDisplay() {
+    const selectedWordsDiv = document.getElementById('selected-words');
+    selectedWordsDiv.innerHTML = userAffirmation.join(' ');
+}
+
+function clearAffirmation() {
+    userAffirmation = [];
+    updateAffirmationDisplay();
+    document.querySelectorAll('.word-button').forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    });
+    document.getElementById('generated-affirmation').classList.add('hidden');
+}
+
+function generateAffirmation() {
+    if (userAffirmation.length === 0) {
+        alert('Please select some words first!');
+        return;
+    }
+    
+    const userText = userAffirmation.join(' ');
+    const generatedText = `"${userText}." - You have the power to create positive change in your life.`;
+    
+    document.getElementById('final-affirmation').textContent = generatedText;
+    document.getElementById('generated-affirmation').classList.remove('hidden');
+    
+    // Save to localStorage for history
+    const history = JSON.parse(localStorage.getItem('affirmationHistory') || '[]');
+    history.push({
+        userWords: userAffirmation.slice(),
+        generated: generatedText,
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('affirmationHistory', JSON.stringify(history));
+}
+
+// Authentication event handlers
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const tab = this.dataset.tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+        });
+    });
+
+    // Login form
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        
+        try {
+            await api.login(username, password);
+            currentUser = await api.getUserProfile();
+            isAuthenticated = true;
+            hideAuthModal();
+            showUserWelcome();
+            showAuthStatus('Login successful!', 'success');
+        } catch (error) {
+            showAuthStatus('Login failed: ' + error.message, 'error');
+        }
+    });
+
+    // Register form
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('registerUsername').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        
+        try {
+            await api.register(username, email, password);
+            showAuthStatus('Registration successful! Please login.', 'success');
+            // Switch to login tab
+            document.querySelector('[data-tab="login"]').click();
+        } catch (error) {
+            showAuthStatus('Registration failed: ' + error.message, 'error');
+        }
+    });
+
+    // Initialize authentication
+    initAuth();
+});
+
+function showAuthStatus(message, type) {
+    const statusDiv = document.getElementById('authStatus');
+    statusDiv.textContent = message;
+    statusDiv.className = `auth-status ${type}`;
+    
+    setTimeout(() => {
+        statusDiv.textContent = '';
+        statusDiv.className = 'auth-status';
+    }, 3000);
+}
+
+// Enhanced game functions with API integration
+async function handleWaterLogWithAPI() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
+    try {
+        const response = await api.logHydration(1);
+        waterLogged = response.total_today;
+        updateHydrationView();
+        showAuthStatus(`Logged water! Total today: ${waterLogged}`, 'success');
+    } catch (error) {
+        console.error('Failed to log water:', error);
+        // Fallback to local storage
+        handleWaterLog();
+    }
+}
+
+async function handleMorningBrushWithAPI() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
+    try {
+        await api.logBrushing('morning');
+        brushLogged.morning = true;
+        updateSmileView();
+        showAuthStatus('Morning routine logged!', 'success');
+    } catch (error) {
+        console.error('Failed to log brushing:', error);
+        handleMorningBrush();
+    }
+}
+
+async function handleNightBrushWithAPI() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
+    try {
+        await api.logBrushing('night');
+        brushLogged.night = true;
+        updateSmileView();
+        showAuthStatus('Night routine logged!', 'success');
+    } catch (error) {
+        console.error('Failed to log brushing:', error);
+        handleNightBrush();
+    }
+}
+
+async function handleBreathingWithAPI() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
+    try {
+        await api.logBreathing(30);
+        breathingSessions++;
+        updateDashboard();
+        showAuthStatus('Breathing session logged!', 'success');
+    } catch (error) {
+        console.error('Failed to log breathing:', error);
+        // Still run the breathing exercise locally
+    }
+}
+
