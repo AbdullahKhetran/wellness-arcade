@@ -201,12 +201,17 @@ function loadDashboard() {
         breathingInterval = null;
     }
     
+    // Show the game selection grid
+    const gameSelectionGrid = document.querySelector('.game-selection-grid');
+    if (gameSelectionGrid) {
+        gameSelectionGrid.style.display = 'grid';
+    }
     
     mainScreenTitle.textContent = "Welcome to the Wellness Arcade!";
     mainContentArea.innerHTML = `
         <img src="https://via.placeholder.com/200x150/f0f8ff/5a7d95?text=Cute+Forest" alt="Cute forest scene" class="welcome-image">
         <p>Your journey to mindful habits starts here!</p>
-        <p>Pick a game from the left dashboard to get started and boost your wellness!</p>
+        <p>Pick a game below to get started and boost your wellness!</p>
     `; 
     updateDashboard();
 }
@@ -219,6 +224,11 @@ function loadGame(gameName) {
         breathingInterval = null;
     }
 
+    // Hide the game selection grid
+    const gameSelectionGrid = document.querySelector('.game-selection-grid');
+    if (gameSelectionGrid) {
+        gameSelectionGrid.style.display = 'none';
+    }
 
     mainContentArea.innerHTML = gameTemplates[gameName];
     const mainScreenTitle = document.getElementById('main-screen-title');
