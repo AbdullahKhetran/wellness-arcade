@@ -16,7 +16,7 @@ A collection of mini interactive games designed to reinforce healthy habits thro
 
 ### 3. **Breathe & Balance** 🧘
 - Interactive breathing exercise with visual cues
-- 30-second guided breathing sessions
+- 16-second guided breathing sessions
 - Promotes mindfulness and stress reduction
 
 ### 4. **Brain Sprint** 🧠
@@ -39,33 +39,55 @@ A collection of mini interactive games designed to reinforce healthy habits thro
 ### Frontend
 - **Pure HTML, CSS, and JavaScript** (no frameworks)
 - Responsive design
-- Local storage fallback for offline functionality
+- Auto-detects production vs development environments
 - Real-time API integration for data persistence
 
 ### Backend
 - **FastAPI** with Python
 - RESTful API design
-- In-memory storage
-- CORS-enabled for frontend integration
+- **SQLite** (development) / **PostgreSQL** (production)
+- Environment-based CORS configuration
+- Serves frontend static files
 - Comprehensive API documentation
+
+### Deployment
+- **Railway** for production hosting
+- **Single service** deployment (frontend + backend)
+- **Automatic database switching** (SQLite → PostgreSQL)
+- **Environment variable configuration**
 
 ## 🚀 Quick Start
 
-#### Backend Setup
+### Development (Localhost)
+
+#### Option 1: Unified Setup (Recommended)
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the application (serves both frontend and backend)
+python main.py
+```
+
+#### Option 2: Traditional Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
 python start_server.py
 ```
 
-#### Frontend Setup
-```bash
-# In a new terminal, from the project root
-cd frontend
-python -m http.server 3000
-```
+Then open **http://localhost:8000** in your browser to access the Wellness Arcade.
 
-Then open **http://localhost:3000** in your browser to access the Wellness Arcade.
+### Production (Railway)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed Railway deployment instructions.
+
+**Quick Deploy:**
+1. Push code to GitHub
+2. Connect repository to Railway
+3. Add PostgreSQL database
+4. Set environment variables
+5. Deploy!
 
 ## 📡 API Endpoints
 
@@ -94,27 +116,62 @@ Then open **http://localhost:3000** in your browser to access the Wellness Arcad
 ### Project Structure
 ```
 wellness-arcade/
-├── frontend/               # Frontend application
-│   ├── index.html          # Main HTML file
-│   ├── script.js           # Game logic and functionality
-│   ├── style.css           # Ghibli-inspired styling
-│   ├── api-service.js      # Backend API communication
-│   └── README.md           # Frontend documentation
-├── backend/                # Backend API server
-│   ├── main.py             # FastAPI application
-│   ├── start_server.py     # Backend startup script
-│   ├── requirements.txt    # Python dependencies
-│   └── README.md           # Backend documentation
-├── context.txt             # Project requirements
-└── README.md               # This file
+├── main.py                 # Railway entry point & unified startup
+├── requirements.txt        # Python dependencies (references backend/)
+├── railway.toml           # Railway deployment configuration
+├── Procfile              # Process definition
+├── env.example           # Environment variables template
+├── DEPLOYMENT.md         # Railway deployment guide
+├── frontend/             # Frontend application
+│   ├── index.html        # Main HTML file
+│   ├── script.js         # Game logic and functionality
+│   ├── style.css         # Ghibli-inspired styling
+│   ├── api-service.js    # Backend API communication
+│   └── README.md         # Frontend documentation
+├── backend/              # Backend API server
+│   ├── main.py          # FastAPI application
+│   ├── start_server.py  # Backend startup script
+│   ├── requirements.txt # Python dependencies
+│   ├── database.py      # Database configuration
+│   ├── auth_utils.py    # Authentication utilities
+│   ├── wellness_arcade.db # SQLite database (development)
+│   └── README.md        # Backend documentation
+├── context.txt          # Project requirements
+└── README.md            # This file
 ```
 
 ### Technology Stack
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Backend**: Python 3.8+, FastAPI, Pydantic
-- **Storage**: In-memory (development), localStorage (frontend)
+- **Backend**: Python 3.11+, FastAPI, Pydantic, SQLAlchemy
+- **Database**: SQLite (development) / PostgreSQL (production)
+- **Authentication**: bcrypt, JWT tokens
 - **Server**: Uvicorn (ASGI server)
+- **Deployment**: Railway (with automatic database switching)
 
+### Database Configuration
+- **Development**: Uses SQLite (`backend/wellness_arcade.db`)
+- **Production**: Uses PostgreSQL (Railway managed)
+- **Auto-switching**: Environment variable `DATABASE_URL` determines which database to use
+- **No code changes**: Same codebase works in both environments
+
+### Environment Differences
+
+| Feature | Development (Localhost) | Production (Railway) |
+|---------|------------------------|---------------------|
+| **Database** | SQLite (local file) | PostgreSQL (cloud) |
+| **Frontend** | Served by FastAPI | Served by FastAPI |
+| **API URL** | `http://localhost:8000` | `https://your-app.railway.app` |
+| **CORS** | Allows all origins | Configured origins only |
+| **Static Files** | `/static/` path | `/static/` path |
+| **Startup** | `python main.py` | Automatic via Railway |
+
+### Deployment Features
+- **Single Service**: Frontend and backend deployed together
+- **Auto-scaling**: Railway handles traffic spikes
+- **Database Backups**: Automatic PostgreSQL backups
+- **Environment Variables**: Secure configuration management
+- **Custom Domains**: Support for custom domain names
+- **Free Tier**: $5 monthly credit (usually sufficient for small apps)
 
 ## 📄 License
 
