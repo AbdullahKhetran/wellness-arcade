@@ -28,17 +28,27 @@ app.add_middleware(
 )
 
 # Mount static files for frontend
-frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
-if os.path.exists(frontend_path):
+# Handle both localhost (from root) and Railway (from backend) scenarios
+if os.path.exists("frontend"):
+    # Running from root directory (localhost with root main.py)
+    frontend_path = "frontend"
+elif os.path.exists(os.path.join(os.path.dirname(__file__), "..", "frontend")):
+    # Running from backend directory (original setup)
+    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+else:
+    frontend_path = None
+
+if frontend_path and os.path.exists(frontend_path):
     app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 # Serve frontend files
 @app.get("/")
 async def serve_frontend():
     """Serve the main frontend page"""
-    frontend_file = os.path.join(frontend_path, "index.html")
-    if os.path.exists(frontend_file):
-        return FileResponse(frontend_file)
+    if frontend_path:
+        frontend_file = os.path.join(frontend_path, "index.html")
+        if os.path.exists(frontend_file):
+            return FileResponse(frontend_file)
     return {"message": "Frontend files not found"}
 
 # Initialize database on startup
