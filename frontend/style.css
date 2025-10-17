@@ -169,20 +169,21 @@ body {
 .arcade-container {
     display: flex;
     justify-content: center;
-    gap: 20px; 
-    padding: 0 20px 20px;
+    gap: 15px; 
+    padding: 0 20px 15px;
     max-width: 1000px;
     margin: 0 auto;
     flex-grow: 1; 
+    box-sizing: border-box;
 }
 
 .dashboard {
     background-color: var(--card-background); 
     border-radius: 15px;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+    padding: 15px;
     width: 300px; 
-    min-height: 500px; 
+    min-height: 400px; 
     display: flex;
     flex-direction: column;
     align-items: center; 
@@ -191,8 +192,8 @@ body {
 .daily-reset-info {
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
     border-radius: 12px;
-    padding: 15px;
-    margin: 0 0 20px 0;
+    padding: 12px;
+    margin: 0 0 15px 0;
     border: 2px solid #e1bee7;
     text-align: center;
     font-size: 0.9em;
@@ -203,15 +204,15 @@ body {
 .dashboard h2 {
     color: var(--primary-color);
     margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.6em;
+    margin-bottom: 12px;
+    font-size: 1.5em;
 }
 .stat-box {
     width: 100%; 
     background-color: #f8f9fa; 
     border-radius: 8px;
-    padding: 8px 10px;
-    margin-bottom: 10px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); 
     border: 1px solid var(--border-color);
 }
@@ -230,8 +231,8 @@ body {
 }
 
 .reset-section {
-    margin-top: 20px;
-    padding-top: 15px;
+    margin-top: 15px;
+    padding-top: 12px;
     border-top: 1px dashed var(--border-color);
 }
 
@@ -266,16 +267,16 @@ body {
 .game-selection-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); 
-    gap: 15px; 
+    gap: 12px; 
     width: 100%; 
     max-width: 100%; 
-    margin: 20px 0;
+    margin: 15px 0;
 }
 
 .game-box {
     background-color: var(--card-background);
     border-radius: 10px;
-    padding: 12px; 
+    padding: 10px; 
     cursor: pointer;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -311,9 +312,9 @@ body {
     background-color: var(--card-background);
     border-radius: 15px;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    padding: 30px;
+    padding: 20px;
     width: 600px; 
-    min-height: 500px; 
+    min-height: 400px; 
     text-align: center;
     display: flex; 
     flex-direction: column;
@@ -734,6 +735,28 @@ button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; 
 }
 
 
+@media (max-width: 1050px) {
+    .game-selection-grid {
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 12px;
+    }
+}
+
+@media (max-width: 960px) {
+    .arcade-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        padding: 0 15px 20px;
+    }
+    
+    .dashboard, .main-screen-content {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 10px;
+    }
+}
+
 @media (max-width: 800px) {
     .header-content {
         flex-direction: column;
@@ -746,14 +769,12 @@ button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; 
     }
     
     .arcade-container {
-        flex-direction: column; 
-        align-items: center;
-        padding: 15px;
+        padding: 0 20px 20px;
     }
     .dashboard, .main-screen-content {
-        width: 100%;
         max-width: 450px; 
         min-height: auto; 
+        margin: 0 15px;
     }
     .dashboard {
         margin-bottom: 20px;
@@ -776,6 +797,14 @@ button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; 
 }
 
 @media (max-width: 500px) {
+    .arcade-container {
+        padding: 0 15px 20px;
+    }
+    
+    .dashboard, .main-screen-content {
+        margin: 0 10px;
+    }
+    
     .game-selection-grid {
         grid-template-columns: 1fr; 
         gap: 8px;
