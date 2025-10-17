@@ -1,4 +1,4 @@
-# Wellness Arcade 
+# [Wellness Arcade](https://web-production-0c23.up.railway.app/) 
 
 A collection of mini interactive games designed to reinforce healthy habits through gamification. Each mini-game encourages wellness activities in a fun, engaging way.
 
