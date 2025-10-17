@@ -5,7 +5,6 @@ from typing import List, Optional
 import uvicorn
 from datetime import datetime, date
 import json
-import os
 from sqlalchemy.orm import Session
 
 # Import our database and auth utilities
@@ -226,7 +225,6 @@ async def log_hydration(log: HydrationLog, username: str = Depends(get_current_u
     daily_record.count += log.glasses
     
     # Update data JSON
-    import json
     data_list = json.loads(daily_record.data_json)
     data_list.append({
         "glasses": log.glasses,
@@ -245,54 +243,82 @@ async def get_hydration_status(username: str = Depends(get_current_user), db: Se
     return {"glasses_today": daily_record.count, "goal": 8}
 
 @app.post("/api/hydration/reset/")
-async def reset_hydration(username: str = Depends(get_current_user)):
-    today = date.today().isoformat()
-    if username in daily_data and today in daily_data[username]:
-        daily_data[username][today]["hydration"] = {"count": 0, "data": []}
+async def reset_hydration(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "hydration", db)
+    
+    # Reset count and data
+    daily_record.count = 0
+    daily_record.data_json = "[]"
+    daily_record.updated_at = datetime.utcnow()
+    
+    db.commit()
+    
     return {"message": "Hydration data reset for today"}
 
 # Brushing teeth endpoints
 @app.post("/api/brushing/log/")
-async def log_brushing(log: BrushingLog, username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "brushing")
+async def log_brushing(log: BrushingLog, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "brushing", db)
     
-    daily_data_obj["count"] += 1
-    daily_data_obj["data"].append({
+    # Update count
+    daily_record.count += 1
+    
+    # Update data JSON
+    data_list = json.loads(daily_record.data_json)
+    data_list.append({
         "session_type": log.session_type,
         "timestamp": datetime.now().isoformat()
     })
+    daily_record.data_json = json.dumps(data_list)
+    daily_record.updated_at = datetime.utcnow()
     
-    return {"message": f"Logged {log.session_type} brushing", "total_today": daily_data_obj["count"]}
+    db.commit()
+    
+    return {"message": f"Logged {log.session_type} brushing", "total_today": daily_record.count}
 
 @app.get("/api/brushing/status/")
-async def get_brushing_status(username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "brushing")
-    return {"brushing_today": daily_data_obj["count"], "goal": 2}
+async def get_brushing_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "brushing", db)
+    return {"brushing_today": daily_record.count, "goal": 2}
 
 @app.post("/api/brushing/reset/")
-async def reset_brushing(username: str = Depends(get_current_user)):
-    today = date.today().isoformat()
-    if username in daily_data and today in daily_data[username]:
-        daily_data[username][today]["brushing"] = {"count": 0, "data": []}
+async def reset_brushing(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "brushing", db)
+    
+    # Reset count and data
+    daily_record.count = 0
+    daily_record.data_json = "[]"
+    daily_record.updated_at = datetime.utcnow()
+    
+    db.commit()
+    
     return {"message": "Brushing data reset for today"}
 
 # Breathing exercise endpoints
 @app.post("/api/breathing/log/")
-async def log_breathing(log: BreathingLog, username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "breathing")
+async def log_breathing(log: BreathingLog, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "breathing", db)
     
-    daily_data_obj["count"] += 1
-    daily_data_obj["data"].append({
+    # Update count
+    daily_record.count += 1
+    
+    # Update data JSON
+    data_list = json.loads(daily_record.data_json)
+    data_list.append({
         "duration_seconds": log.duration_seconds,
         "timestamp": datetime.now().isoformat()
     })
+    daily_record.data_json = json.dumps(data_list)
+    daily_record.updated_at = datetime.utcnow()
     
-    return {"message": f"Logged breathing session", "total_today": daily_data_obj["count"]}
+    db.commit()
+    
+    return {"message": f"Logged breathing session", "total_today": daily_record.count}
 
 @app.get("/api/breathing/status/")
-async def get_breathing_status(username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "breathing")
-    return {"sessions_today": daily_data_obj["count"]}
+async def get_breathing_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "breathing", db)
+    return {"sessions_today": daily_record.count}
 
 # Brain puzzle endpoints
 @app.get("/api/puzzles/")
@@ -305,23 +331,31 @@ async def get_puzzles():
     return {"puzzles": puzzles}
 
 @app.post("/api/puzzles/submit/")
-async def submit_puzzle_response(response: PuzzleResponse, username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "puzzles")
+async def submit_puzzle_response(response: PuzzleResponse, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "puzzles", db)
     
-    daily_data_obj["count"] += 1
-    daily_data_obj["data"].append({
+    # Update count
+    daily_record.count += 1
+    
+    # Update data JSON
+    data_list = json.loads(daily_record.data_json)
+    data_list.append({
         "puzzle_id": response.puzzle_id,
         "user_sequence": response.user_sequence,
         "correct": response.correct,
         "timestamp": datetime.now().isoformat()
     })
+    daily_record.data_json = json.dumps(data_list)
+    daily_record.updated_at = datetime.utcnow()
+    
+    db.commit()
     
     return {"message": "Puzzle response logged", "correct": response.correct}
 
 @app.get("/api/puzzles/status/")
-async def get_puzzle_status(username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "puzzles")
-    return {"puzzles_completed_today": daily_data_obj["count"]}
+async def get_puzzle_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "puzzles", db)
+    return {"puzzles_completed_today": daily_record.count}
 
 # Emotional awareness endpoints
 @app.get("/api/emotions/session/")
@@ -337,15 +371,23 @@ async def get_emotion_scenario():
     return random.choice(scenarios)
 
 @app.post("/api/emotions/log/")
-async def log_emotion(log: EmotionLog, username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "emotions")
+async def log_emotion(log: EmotionLog, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "emotions", db)
     
-    daily_data_obj["count"] += 1
-    daily_data_obj["data"].append({
+    # Update count
+    daily_record.count += 1
+    
+    # Update data JSON
+    data_list = json.loads(daily_record.data_json)
+    data_list.append({
         "scenario_id": log.scenario_id,
         "selected_mood": log.selected_mood,
         "timestamp": datetime.now().isoformat()
     })
+    daily_record.data_json = json.dumps(data_list)
+    daily_record.updated_at = datetime.utcnow()
+    
+    db.commit()
     
     return {"message": "Emotion logged successfully"}
 
@@ -372,15 +414,23 @@ async def get_affirmation_words():
     return {"words": words}
 
 @app.post("/api/affirmations/submit/")
-async def submit_affirmation(affirmation: AffirmationSubmit, username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "affirmations")
+async def submit_affirmation(affirmation: AffirmationSubmit, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "affirmations", db)
     
-    daily_data_obj["count"] += 1
-    daily_data_obj["data"].append({
+    # Update count
+    daily_record.count += 1
+    
+    # Update data JSON
+    data_list = json.loads(daily_record.data_json)
+    data_list.append({
         "words": affirmation.words,
         "generated_affirmation": affirmation.generated_affirmation,
         "timestamp": datetime.now().isoformat()
     })
+    daily_record.data_json = json.dumps(data_list)
+    daily_record.updated_at = datetime.utcnow()
+    
+    db.commit()
     
     return {"message": "Affirmation saved successfully"}
 
@@ -393,9 +443,10 @@ async def generate_affirmation(words: str):
     return {"generated_affirmation": generated}
 
 @app.get("/api/affirmations/history/")
-async def get_affirmation_history(username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "affirmations")
-    return {"history": daily_data_obj["data"]}
+async def get_affirmation_history(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "affirmations", db)
+    history_data = json.loads(daily_record.data_json)
+    return {"history": history_data}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

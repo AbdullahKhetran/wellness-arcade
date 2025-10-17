@@ -5,7 +5,6 @@ Authentication utilities for password hashing and verification
 import bcrypt
 from datetime import datetime, timedelta
 import secrets
-import string
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
@@ -21,7 +20,8 @@ def generate_session_token() -> str:
     """Generate a secure session token"""
     # Generate a random token with timestamp
     timestamp = str(int(datetime.utcnow().timestamp()))
-    random_part = ''.join(secrets.choices(string.ascii_letters + string.digits, k=32))
+    # Use secrets.token_urlsafe for a secure random string
+    random_part = secrets.token_urlsafe(32)
     return f"session_{timestamp}_{random_part}"
 
 def get_token_expiry() -> datetime:

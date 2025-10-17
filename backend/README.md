@@ -4,10 +4,12 @@ FastAPI backend server for the Wellness Arcade application.
 
 ## Features
 
-- User authentication (register/login/logout)
+- User authentication (register/login/logout) with secure password hashing
 - Daily wellness tracking for all 6 games
 - RESTful API endpoints for frontend integration
-- In-memory data storage
+- SQLite database with persistent data storage
+- Session management with automatic expiration
+- Secure authentication with bcrypt password hashing
 
 ## API Endpoints
 
@@ -52,9 +54,9 @@ FastAPI backend server for the Wellness Arcade application.
 ## Installation
 
 1. Install Python 3.8+ if not already installed
-2. Install dependencies:
+2. Install dependencies and initialize database:
    ```bash
-   pip install -r requirements.txt
+   python install_database.py
    ```
 
 ## Running the Server
@@ -68,6 +70,14 @@ python start_server.py
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+## Database
+
+The application uses SQLite for data storage:
+- **Database file**: `wellness_arcade.db`
+- **Tables**: users, user_sessions, daily_wellness_data
+- **Features**: Automatic table creation, password hashing, session management
+- **Backup**: Simply copy the `.db` file to backup data
 
 The server will be available at:
 - API: http://localhost:8000
