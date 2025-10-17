@@ -287,7 +287,6 @@ function loadDashboard() {
     
     mainScreenTitle.textContent = "Welcome to the Wellness Arcade!";
     mainContentArea.innerHTML = `
-        <img src="https://via.placeholder.com/200x150/f0f8ff/5a7d95?text=Cute+Forest" alt="Cute forest scene" class="welcome-image">
         <p>Your journey to mindful habits starts here!</p>
         <p>Pick a game below to get started and boost your wellness!</p>
     `; 
