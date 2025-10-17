@@ -6,6 +6,11 @@ import uvicorn
 from datetime import datetime, date
 import json
 import os
+from sqlalchemy.orm import Session
+
+# Import our database and auth utilities
+from database import get_db, init_database, User, UserSession, DailyWellnessData
+from auth_utils import hash_password, verify_password, generate_session_token, get_token_expiry, is_token_expired
 
 app = FastAPI(title="Wellness Arcade API", version="1.0.0")
 
@@ -18,10 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory storage (in production, use a proper database)
-users_db = {}
-user_sessions = {}
-daily_data = {}
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    init_database()
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -59,7 +64,7 @@ class LogoutRequest(BaseModel):
     session_token: str
 
 # Helper functions
-def get_current_user(authorization: str = Header(None)):
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
@@ -69,20 +74,53 @@ def get_current_user(authorization: str = Header(None)):
     except IndexError:
         raise HTTPException(status_code=401, detail="Invalid authorization header")
     
-    if token not in user_sessions:
+    # Check if session exists in database
+    session = db.query(UserSession).filter(UserSession.session_token == token).first()
+    if not session:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    return user_sessions[token]
+    # Check if session is expired
+    if is_token_expired(session.expires_at):
+        # Remove expired session
+        db.delete(session)
+        db.commit()
+        raise HTTPException(status_code=401, detail="Session expired")
+    
+    # Get user from database
+    user = db.query(User).filter(User.id == session.user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    return user.username
 
-def get_user_daily_data(user_id: str, data_type: str):
+def get_user_daily_data(username: str, data_type: str, db: Session):
     today = date.today().isoformat()
-    if user_id not in daily_data:
-        daily_data[user_id] = {}
-    if today not in daily_data[user_id]:
-        daily_data[user_id][today] = {}
-    if data_type not in daily_data[user_id][today]:
-        daily_data[user_id][today][data_type] = {"count": 0, "data": []}
-    return daily_data[user_id][today][data_type]
+    
+    # Get user ID
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get or create daily data record
+    daily_record = db.query(DailyWellnessData).filter(
+        DailyWellnessData.user_id == user.id,
+        DailyWellnessData.date == today,
+        DailyWellnessData.data_type == data_type
+    ).first()
+    
+    if not daily_record:
+        daily_record = DailyWellnessData(
+            user_id=user.id,
+            date=today,
+            data_type=data_type,
+            count=0,
+            data_json="[]"
+        )
+        db.add(daily_record)
+        db.commit()
+        db.refresh(daily_record)
+    
+    return daily_record
 
 # General endpoints
 @app.get("/api/ping/")
@@ -90,43 +128,79 @@ async def ping():
     return {"message": "API is working", "timestamp": datetime.now().isoformat()}
 
 @app.post("/api/register/")
-async def register(user: UserCreate):
-    if user.username in users_db:
+async def register(user: UserCreate, db: Session = Depends(get_db)):
+    # Check if username already exists
+    existing_user = db.query(User).filter(User.username == user.username).first()
+    if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
     
-    users_db[user.username] = {
-        "username": user.username,
-        "email": user.email,
-        "password": user.password,  # In production, hash this
-        "created_at": datetime.now().isoformat()
-    }
+    # Check if email already exists
+    existing_email = db.query(User).filter(User.email == user.email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already exists")
+    
+    # Hash the password
+    hashed_password = hash_password(user.password)
+    
+    # Create new user
+    db_user = User(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password
+    )
+    
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
     
     return {"message": "User registered successfully", "username": user.username}
 
 @app.post("/api/login/")
-async def login(user: UserLogin):
-    if user.username not in users_db or users_db[user.username]["password"] != user.password:
+async def login(user: UserLogin, db: Session = Depends(get_db)):
+    # Find user in database
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if not db_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Create session token (in production, use proper JWT)
-    session_token = f"session_{user.username}_{datetime.now().timestamp()}"
-    user_sessions[session_token] = user.username
+    # Verify password
+    if not verify_password(user.password, db_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Generate session token
+    session_token = generate_session_token()
+    expires_at = get_token_expiry()
+    
+    # Create session in database
+    db_session = UserSession(
+        session_token=session_token,
+        user_id=db_user.id,
+        expires_at=expires_at
+    )
+    
+    db.add(db_session)
+    db.commit()
     
     return {"message": "Login successful", "session_token": session_token}
 
 @app.post("/api/logout/")
-async def logout(logout_request: LogoutRequest):
-    if logout_request.session_token in user_sessions:
-        del user_sessions[logout_request.session_token]
+async def logout(logout_request: LogoutRequest, db: Session = Depends(get_db)):
+    # Find and delete session from database
+    session = db.query(UserSession).filter(UserSession.session_token == logout_request.session_token).first()
+    if session:
+        db.delete(session)
+        db.commit()
     return {"message": "Logout successful"}
 
 @app.get("/api/user/")
-async def get_user_profile(username: str = Depends(get_current_user)):
-    user_data = users_db[username]
+async def get_user_profile(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
     return {
-        "username": user_data["username"],
-        "email": user_data["email"],
-        "created_at": user_data["created_at"]
+        "username": user.username,
+        "email": user.email,
+        "created_at": user.created_at.isoformat()
     }
 
 @app.get("/api/tip/")
@@ -145,21 +219,30 @@ async def get_daily_tip():
 
 # Hydration game endpoints
 @app.post("/api/hydration/log/")
-async def log_hydration(log: HydrationLog, username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "hydration")
+async def log_hydration(log: HydrationLog, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "hydration", db)
     
-    daily_data_obj["count"] += log.glasses
-    daily_data_obj["data"].append({
+    # Update count
+    daily_record.count += log.glasses
+    
+    # Update data JSON
+    import json
+    data_list = json.loads(daily_record.data_json)
+    data_list.append({
         "glasses": log.glasses,
         "timestamp": datetime.now().isoformat()
     })
+    daily_record.data_json = json.dumps(data_list)
+    daily_record.updated_at = datetime.utcnow()
     
-    return {"message": f"Logged {log.glasses} glass(es)", "total_today": daily_data_obj["count"]}
+    db.commit()
+    
+    return {"message": f"Logged {log.glasses} glass(es)", "total_today": daily_record.count}
 
 @app.get("/api/hydration/status/")
-async def get_hydration_status(username: str = Depends(get_current_user)):
-    daily_data_obj = get_user_daily_data(username, "hydration")
-    return {"glasses_today": daily_data_obj["count"], "goal": 8}
+async def get_hydration_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "hydration", db)
+    return {"glasses_today": daily_record.count, "goal": 8}
 
 @app.post("/api/hydration/reset/")
 async def reset_hydration(username: str = Depends(get_current_user)):
