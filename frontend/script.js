@@ -100,6 +100,17 @@ function hideAuthModal() {
     document.getElementById('authModal').style.display = 'none';
 }
 
+function showUserWelcome() {
+    const mainScreenTitle = document.getElementById('main-screen-title');
+    if (mainScreenTitle) {
+        if (isAuthenticated && currentUser) {
+            mainScreenTitle.textContent = `Welcome back, ${currentUser.username}!`;
+        } else {
+            mainScreenTitle.textContent = "Welcome to the Wellness Arcade!";
+        }
+    }
+}
+
 
 // Authentication menu dropdown functionality
 function toggleAuthDropdown() {
@@ -978,6 +989,11 @@ document.addEventListener('DOMContentLoaded', function() {
             await api.login(username, password);
             currentUser = await api.getUserProfile();
             isAuthenticated = true;
+            
+            // Clear form fields
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            
             hideAuthModal();
             showUserWelcome();
             updateAuthMenu();
