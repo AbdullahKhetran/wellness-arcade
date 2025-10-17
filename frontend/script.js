@@ -67,7 +67,7 @@ const playSound = (emoji) => {
 };
 
 function updateDashboard() {
-    document.getElementById('waterCount').textContent = waterLogged;
+    document.getElementById('waterCount').textContent = `${waterLogged}/8`;
     document.getElementById('brushingCount').textContent = `${(brushLogged.morning ? 1 : 0) + (brushLogged.night ? 1 : 0)}/2`;
     document.getElementById('breathingCount').textContent = breathingSessions;
     document.getElementById('brainScore').textContent = brainHighScore;
@@ -672,6 +672,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize authentication
     initAuth();
+    
+    // Update dashboard with loaded data
+    updateDashboard();
 });
 
 function showAuthStatus(message, type) {
