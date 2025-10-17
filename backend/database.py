@@ -1,6 +1,6 @@
 """
 Database configuration and setup for Wellness Arcade
-Using SQLite for quick setup and development
+Supports both SQLite (development) and PostgreSQL (production)
 """
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Text, Float
@@ -9,14 +9,19 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import os
 
-# Database URL - SQLite file in the backend directory
-DATABASE_URL = "sqlite:///./wellness_arcade.db"
+# Database URL - supports both SQLite and PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./wellness_arcade.db")
 
-# Create SQLAlchemy engine
-engine = create_engine(
-    DATABASE_URL, 
-    connect_args={"check_same_thread": False}  # Needed for SQLite
-)
+# Create SQLAlchemy engine with appropriate settings
+if DATABASE_URL.startswith("postgresql"):
+    # PostgreSQL configuration
+    engine = create_engine(DATABASE_URL)
+else:
+    # SQLite configuration (development)
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False}  # Needed for SQLite
+    )
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

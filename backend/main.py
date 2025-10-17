@@ -1,10 +1,13 @@
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
 from datetime import datetime, date
 import json
+import os
 from sqlalchemy.orm import Session
 
 # Import our database and auth utilities
@@ -14,13 +17,29 @@ from auth_utils import hash_password, verify_password, generate_session_token, g
 app = FastAPI(title="Wellness Arcade API", version="1.0.0")
 
 # CORS middleware to allow frontend connections
+import os
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend domain
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for frontend
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+
+# Serve frontend files
+@app.get("/")
+async def serve_frontend():
+    """Serve the main frontend page"""
+    frontend_file = os.path.join(frontend_path, "index.html")
+    if os.path.exists(frontend_file):
+        return FileResponse(frontend_file)
+    return {"message": "Frontend files not found"}
 
 # Initialize database on startup
 @app.on_event("startup")

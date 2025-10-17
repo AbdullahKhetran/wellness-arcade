@@ -3,7 +3,9 @@
 
 class WellnessAPI {
     constructor() {
-        this.baseURL = 'http://localhost:8000';
+        // Auto-detect environment: use current domain for production, localhost for development
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        this.baseURL = isProduction ? '' : 'http://localhost:8000';
         this.sessionToken = localStorage.getItem('sessionToken') || null;
     }
 
