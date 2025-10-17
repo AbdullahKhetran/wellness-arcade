@@ -188,6 +188,18 @@ body {
     align-items: center; 
     border: 1px solid var(--border-color);
 }
+.daily-reset-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 0 0 20px 0;
+    border: 2px solid #e1bee7;
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--secondary-color);
+    line-height: 1.4;
+}
+
 .dashboard h2 {
     color: var(--primary-color);
     margin-top: 0;
@@ -534,6 +546,60 @@ button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; 
 #selected-words { background-color: white; border-radius: 6px; padding: 10px; margin: 10px 0; min-height: 40px; border: 2px dashed var(--border-color); }
 #generated-affirmation.hidden { display: none; }
 #final-affirmation { font-style: italic; font-size: 1.1em; color: var(--primary-color); }
+
+/* Affirmation Builder Button Colors */
+#clear-affirmation {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: background-color 0.3s !important;
+    font-size: 0.9em !important;
+}
+
+#clear-affirmation:hover {
+    background-color: #c82333 !important;
+}
+
+#generate-affirmation {
+    background-color: #28a745 !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: background-color 0.3s !important;
+    font-size: 1.1em !important;
+    margin-top: 15px !important;
+}
+
+#generate-affirmation:hover {
+    background-color: #218838 !important;
+}
+
+#generate-affirmation:disabled {
+    background-color: #6c757d !important;
+    cursor: not-allowed !important;
+}
+
+.restart-affirmation-btn {
+    background-color: #007bff !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 24px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: background-color 0.3s !important;
+    font-size: 1.1em !important;
+    margin-top: 15px !important;
+    margin-left: 10px !important;
+}
+
+.restart-affirmation-btn:hover {
+    background-color: #0056b3 !important;
+}
 
 /* Utility classes */
 .hidden { display: none !important; }

@@ -2,6 +2,8 @@ let waterLogged = 0;
 let brushLogged = 0;
 let breathingSessions = 0;
 let brainHighScore = 0;
+let moodScenariosCompleted = 0;
+let affirmationsCreated = 0;
 let currentBrainSequence = [];
 let playerSequence = [];
 let isPlayerTurn = false;
@@ -136,6 +138,8 @@ async function handleLogout() {
         waterLogged = 0;
         brushLogged = 0;
         breathingSessions = 0;
+        moodScenariosCompleted = 0;
+        affirmationsCreated = 0;
         updateDashboard();
     } catch (error) {
         console.error('Logout failed:', error);
@@ -153,12 +157,16 @@ function updateDashboard() {
     document.getElementById('brushingCount').textContent = brushLogged;
     document.getElementById('breathingCount').textContent = breathingSessions;
     document.getElementById('brainScore').textContent = brainHighScore;
+    document.getElementById('moodCount').textContent = moodScenariosCompleted;
+    document.getElementById('affirmationCount').textContent = affirmationsCreated;
     
     console.log('Dashboard updated:', {
         waterLogged,
         brushLogged,
         breathingSessions,
         brainHighScore,
+        moodScenariosCompleted,
+        affirmationsCreated,
         isAuthenticated
     });
 }
@@ -462,6 +470,11 @@ function handleNightBrush() {
 
 // --- 4. Brain Sprint Functions ---
 function startGame() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
     currentBrainSequence = [];
     playerSequence = [];
     isPlayerTurn = false;
@@ -513,7 +526,7 @@ function showSequence() {
     }, 600);
 }
 
-function handleTileClick(event) {
+async function handleTileClick(event) {
     if (!isPlayerTurn) return;
     
     const clickedId = parseInt(event.target.dataset.id);
@@ -534,6 +547,17 @@ function handleTileClick(event) {
         // Update high score if needed BEFORE showing popup
         if (sprintCurrentScore > brainHighScore) {
             brainHighScore = sprintCurrentScore;
+            // Log puzzle result to API if authenticated
+            if (isAuthenticated) {
+                try {
+                    await api.submitPuzzleResponse('brain_sprint', [], false); // Log game over
+                    // Reload puzzle data from API to get updated high score
+                    const puzzleStatus = await api.getPuzzleStatus();
+                    brainHighScore = puzzleStatus.high_score_today;
+                } catch (error) {
+                    console.error('Failed to log puzzle result:', error);
+                }
+            }
             updateDashboard();
         }
         
@@ -551,6 +575,15 @@ function handleTileClick(event) {
         document.getElementById('sprint-message').textContent = 'Correct! Next round...';
         playerSequence = [];
         isPlayerTurn = false;
+        
+        // Log correct answer to API if authenticated
+        if (isAuthenticated) {
+            try {
+                await api.submitPuzzleResponse('brain_sprint', playerSequence, true);
+            } catch (error) {
+                console.error('Failed to log puzzle result:', error);
+            }
+        }
         
         // Disable tiles while showing next sequence
         document.querySelectorAll('.sprint-tile').forEach(tile => {
@@ -600,6 +633,11 @@ function showGameOverPopup(score) {
 
 // --- 5. Breathe & Balance Functions ---
 function startBreathing() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
     const button = document.getElementById('startBreathingBtn');
     const circle = document.getElementById('breathing-circle');
     const cue = document.getElementById('breathing-cue');
@@ -703,10 +741,21 @@ function loadMoodScenario() {
     const randomScenario = moodScenarios[Math.floor(Math.random() * moodScenarios.length)];
     document.getElementById('scenario-text').textContent = randomScenario;
     document.getElementById('mood-tip').classList.add('hidden');
-    document.querySelectorAll('.mood-option').forEach(btn => btn.disabled = false);
+    
+    // Reset all mood buttons to default state
+    document.querySelectorAll('.mood-option').forEach(btn => {
+        btn.disabled = false;
+        btn.style.backgroundColor = '';
+        btn.style.color = '';
+    });
 }
 
-function handleMoodSelection(event) {
+async function handleMoodSelection(event) {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
     const selectedMood = event.target.dataset.mood;
     const tip = moodTips[selectedMood];
     
@@ -719,13 +768,33 @@ function handleMoodSelection(event) {
     // Highlight selected mood
     event.target.style.backgroundColor = '#4CAF50';
     event.target.style.color = 'white';
+    
+    // Log mood to API if authenticated
+    if (isAuthenticated) {
+        try {
+            await api.logEmotion('current_scenario', selectedMood);
+            // Reload mood data from API
+            const moodStatus = await api.getEmotionStatus();
+            moodScenariosCompleted = moodStatus.scenarios_today;
+            updateDashboard();
+        } catch (error) {
+            console.error('Failed to log mood:', error);
+            // Fallback to local increment
+            moodScenariosCompleted++;
+            updateDashboard();
+        }
+    } else {
+        // Fallback to local increment when not authenticated
+        moodScenariosCompleted++;
+        updateDashboard();
+    }
 }
 
 // --- 7. Affirmation Builder Functions ---
 const affirmationWordBank = [
     "I", "am", "strong", "capable", "worthy", "loved", "brave", "confident", "peaceful", "grateful",
     "will", "can", "deserve", "choose", "believe", "create", "achieve", "grow", "heal", "thrive",
-    "today", "always", "everyday", "moment", "journey", "life", "future", "present", "past", "now"
+    "today", "always", "moment", "journey", "life", "future", "present", "now"
 ];
 
 function loadAffirmationWords() {
@@ -764,6 +833,11 @@ function clearAffirmation() {
 }
 
 async function generateAffirmation() {
+    if (!isAuthenticated) {
+        alert('Please login to track your progress!');
+        return;
+    }
+    
     if (userAffirmation.length === 0) {
         alert('Please select some words first!');
         return;
@@ -775,14 +849,60 @@ async function generateAffirmation() {
     document.getElementById('final-affirmation').textContent = generatedText;
     document.getElementById('generated-affirmation').classList.remove('hidden');
     
+    // Disable generate button and show restart button
+    const generateBtn = document.getElementById('generate-affirmation');
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generated!';
+    
+    // Create restart button if it doesn't exist
+    if (!document.getElementById('restart-affirmation-btn')) {
+        const restartBtn = document.createElement('button');
+        restartBtn.id = 'restart-affirmation-btn';
+        restartBtn.textContent = 'Start New Affirmation';
+        restartBtn.className = 'restart-affirmation-btn';
+        generateBtn.parentNode.insertBefore(restartBtn, generateBtn.nextSibling);
+        
+        restartBtn.addEventListener('click', restartAffirmation);
+    }
+    
     // Save affirmation to API if authenticated
     if (isAuthenticated) {
         try {
             await api.submitAffirmation(userAffirmation, generatedText);
+            // Reload affirmation data from API
+            const affirmationStatus = await api.getAffirmationStatus();
+            affirmationsCreated = affirmationStatus.affirmations_today;
+            updateDashboard();
             console.log('Affirmation saved to API');
         } catch (error) {
             console.error('Failed to save affirmation to API:', error);
+            // Fallback to local increment
+            affirmationsCreated++;
+            updateDashboard();
         }
+    } else {
+        // Fallback to local increment when not authenticated
+        affirmationsCreated++;
+        updateDashboard();
+    }
+}
+
+function restartAffirmation() {
+    // Clear the affirmation
+    clearAffirmation();
+    
+    // Hide generated affirmation
+    document.getElementById('generated-affirmation').classList.add('hidden');
+    
+    // Reset generate button
+    const generateBtn = document.getElementById('generate-affirmation');
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Generate Affirmation';
+    
+    // Remove restart button
+    const restartBtn = document.getElementById('restart-affirmation-btn');
+    if (restartBtn) {
+        restartBtn.remove();
     }
 }
 
@@ -838,6 +958,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const authMenuContainer = document.querySelector('.auth-menu-container');
         if (!authMenuContainer.contains(e.target)) {
             closeAuthDropdown();
+        }
+    });
+
+    // Close auth modal when clicking outside
+    document.getElementById('authModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideAuthModal();
         }
     });
 
@@ -931,13 +1058,31 @@ async function loadUserWellnessData() {
         breathingSessions = breathingStatus.sessions_today;
         console.log('Breathing data loaded:', breathingStatus);
         
+        // Load brain puzzle data
+        const puzzleStatus = await api.getPuzzleStatus();
+        brainHighScore = puzzleStatus.high_score_today;
+        console.log('Puzzle data loaded:', puzzleStatus);
+        
+        // Load mood data
+        const moodStatus = await api.getEmotionStatus();
+        moodScenariosCompleted = moodStatus.scenarios_today;
+        console.log('Mood data loaded:', moodStatus);
+        
+        // Load affirmation data
+        const affirmationStatus = await api.getAffirmationStatus();
+        affirmationsCreated = affirmationStatus.affirmations_today;
+        console.log('Affirmation data loaded:', affirmationStatus);
+        
         // Update dashboard with loaded data
         updateDashboard();
         
         console.log('User wellness data loaded from API:', {
             waterLogged,
             brushLogged,
-            breathingSessions
+            breathingSessions,
+            brainHighScore,
+            moodScenariosCompleted,
+            affirmationsCreated
         });
     } catch (error) {
         console.error('Failed to load user wellness data:', error);
@@ -945,6 +1090,8 @@ async function loadUserWellnessData() {
         waterLogged = 0;
         brushLogged = 0;
         breathingSessions = 0;
+        moodScenariosCompleted = 0;
+        affirmationsCreated = 0;
         updateDashboard();
     }
 }
@@ -1040,6 +1187,8 @@ async function handleResetStats() {
         waterLogged = 0;
         brushLogged = 0;
         breathingSessions = 0;
+        moodScenariosCompleted = 0;
+        affirmationsCreated = 0;
         
         // Update dashboard
         updateDashboard();

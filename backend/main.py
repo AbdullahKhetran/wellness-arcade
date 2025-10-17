@@ -389,7 +389,24 @@ async def submit_puzzle_response(response: PuzzleResponse, username: str = Depen
 @app.get("/api/puzzles/status/")
 async def get_puzzle_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
     daily_record = get_user_daily_data(username, "puzzles", db)
-    return {"puzzles_completed_today": daily_record.count}
+    
+    # Calculate high score from today's data
+    high_score = 0
+    if daily_record.data_json:
+        try:
+            data_list = json.loads(daily_record.data_json)
+            # Count consecutive correct answers to find high score
+            current_score = 0
+            for entry in data_list:
+                if entry.get("correct", False):
+                    current_score += 1
+                    high_score = max(high_score, current_score)
+                else:
+                    current_score = 0
+        except:
+            pass
+    
+    return {"high_score_today": high_score}
 
 # Emotional awareness endpoints
 @app.get("/api/emotions/session/")
@@ -427,6 +444,11 @@ async def log_emotion(log: EmotionLog, username: str = Depends(get_current_user)
     db.commit()
     
     return {"message": "Emotion logged successfully"}
+
+@app.get("/api/emotions/status/")
+async def get_emotion_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "emotions", db)
+    return {"scenarios_today": daily_record.count}
 
 @app.get("/api/emotions/tip/")
 async def get_emotion_tip(mood: str):
@@ -473,6 +495,11 @@ async def submit_affirmation(affirmation: AffirmationSubmit, username: str = Dep
     db.commit()
     
     return {"message": "Affirmation saved successfully"}
+
+@app.get("/api/affirmations/status/")
+async def get_affirmation_status(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "affirmations", db)
+    return {"affirmations_today": daily_record.count}
 
 @app.get("/api/affirmations/generate/")
 async def generate_affirmation(words: str):

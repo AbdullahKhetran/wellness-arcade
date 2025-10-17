@@ -153,6 +153,9 @@ class WellnessAPI {
     }
 
     // Mood Watch methods
+    async getEmotionStatus() {
+        return await this.makeRequest('/api/emotions/status/');
+    }
     async getEmotionScenario() {
         return await this.makeRequest('/api/emotions/session/');
     }
@@ -172,6 +175,10 @@ class WellnessAPI {
     }
 
     // Affirmation Builder methods
+    async getAffirmationStatus() {
+        return await this.makeRequest('/api/affirmations/status/');
+    }
+
     async getAffirmationWords() {
         return await this.makeRequest('/api/affirmations/words/');
     }
