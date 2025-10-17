@@ -171,10 +171,11 @@ function updateDashboard() {
 }
 
 
-const BACK_BUTTON_HTML = '<button id="backToDashboardBtn" class="back-button">← Back to Dashboard</button>';
+const BACK_BUTTON_HTML = '<button id="backToDashboardBtn" class="back-button top-left">← Back to Dashboard</button>';
 
 const gameTemplates = {
     hydration: `
+        ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Hydration Hero 💧</h3>
         <div class="scientific-advice">
             Scientific Advice: *Dehydration impacts cognitive function.* Maintaining fluid balance helps sustain energy levels and focus throughout the day.
@@ -184,9 +185,9 @@ const gameTemplates = {
             <div id="plant" class="plant-level-0"></div>
         </div>
         <button id="logWaterBtn" class="pulse">Log 1 Glass (✨)</button>
-        ${BACK_BUTTON_HTML}
     `,
     smile: `
+        ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Sparkle Smile 🦷</h3>
         <div class="scientific-advice">
             Scientific Advice: *Oral hygiene is linked to heart health.* Regular brushing reduces chronic inflammation that can contribute to cardiovascular issues.
@@ -197,9 +198,9 @@ const gameTemplates = {
         </div>
         <button id="logBrushMorningBtn" class="pulse">Log Morning Brush</button>
         <button id="logBrushNightBtn" class="pulse">Log Evening Brush</button>
-        ${BACK_BUTTON_HTML}
     `,
     breathe: `
+        ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Breathe & Balance 🧘</h3>
         <div class="scientific-advice">
             Scientific Advice: *Diaphragmatic breathing activates the vagus nerve*, which is key to stimulating the body's parasympathetic (rest and digest) system, lowering heart rate and cortisol.
@@ -210,9 +211,9 @@ const gameTemplates = {
         </div>
         <p id="breathing-timer">Time: 0s</p>
         <button id="startBreathingBtn" class="pulse">Start 30s Exercise (🎶)</button>
-        ${BACK_BUTTON_HTML}
     `,
     brain: `
+        ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Brain Sprint 🧠</h3>
         <div class="scientific-advice">
             Scientific Advice: *Cognitive stimulation supports neuroplasticity.* Short, focused memory tasks help maintain attention and enhance the brain's ability to form new neural connections.
@@ -228,9 +229,9 @@ const gameTemplates = {
             <p id="sprint-message">Press Start to begin!</p>
         </div>
         <button id="startSprintBtn" class="pulse">Start Sprint (▶️)</button>
-        ${BACK_BUTTON_HTML}
     `,
     mood: `
+        ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Mood Watch 😊</h3>
         <div class="scientific-advice">
             Scientific Advice: *Emotional awareness is linked to better mental health.* Recognizing and naming emotions helps regulate stress responses and improves overall well-being.
@@ -252,9 +253,9 @@ const gameTemplates = {
             </div>
         </div>
         <button id="nextMoodBtn" class="pulse">Next Scenario</button>
-        ${BACK_BUTTON_HTML}
     `,
     affirmation: `
+        ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Affirmation Builder ✨</h3>
         <div class="scientific-advice">
             Scientific Advice: *Positive affirmations can rewire neural pathways.* Regular practice of self-affirmation has been shown to reduce stress and improve self-esteem.
@@ -275,7 +276,6 @@ const gameTemplates = {
             </div>
         </div>
         <button id="generate-affirmation" class="pulse">Generate Affirmation</button>
-        ${BACK_BUTTON_HTML}
     `
 };
 
@@ -298,11 +298,18 @@ function loadDashboard() {
         gameSelectionGrid.style.display = 'grid';
     }
     
-    mainScreenTitle.textContent = "Welcome to the Wellness Arcade!";
-    mainContentArea.innerHTML = `
-        <p>Your journey to mindful habits starts here!</p>
-        <p>Pick a game below to get started and boost your wellness!</p>
-    `; 
+    // Show the welcome text on main screen
+    const mainScreenTitle = document.getElementById('main-screen-title');
+    const mainScreenSubtitle = mainScreenTitle.nextElementSibling;
+    if (mainScreenTitle) {
+        mainScreenTitle.style.display = 'block';
+        mainScreenTitle.textContent = "Welcome to the Wellness Arcade!";
+    }
+    if (mainScreenSubtitle) {
+        mainScreenSubtitle.style.display = 'block';
+    }
+    
+    mainContentArea.innerHTML = ``; 
     updateDashboard();
 }
 
@@ -320,9 +327,17 @@ function loadGame(gameName) {
         gameSelectionGrid.style.display = 'none';
     }
 
-    mainContentArea.innerHTML = gameTemplates[gameName];
+    // Hide the welcome text on main screen
     const mainScreenTitle = document.getElementById('main-screen-title');
-    mainScreenTitle.textContent = gameName.charAt(0).toUpperCase() + gameName.slice(1) + " Game";
+    const mainScreenSubtitle = mainScreenTitle.nextElementSibling;
+    if (mainScreenTitle) {
+        mainScreenTitle.style.display = 'none';
+    }
+    if (mainScreenSubtitle) {
+        mainScreenSubtitle.style.display = 'none';
+    }
+
+    mainContentArea.innerHTML = gameTemplates[gameName];
 
     // Attach back button listener
     const backBtn = document.getElementById('backToDashboardBtn');
@@ -389,7 +404,8 @@ function updateHydrationView() {
     const plantElement = document.getElementById('plant');
     const plantStatusDisplay = document.getElementById('plantStatus');
 
-    let level = Math.min(Math.floor(waterLogged / 2), 4); 
+    // Plant grows with each water glass, with 8 levels (0-7, max level after 8 clicks)
+    let level = Math.min(waterLogged, 7); 
     plantElement.className = `plant-level-${level}`; 
 
     if (waterLogged >= WATER_GOAL) {
@@ -802,6 +818,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             showAuthStatus('Registration failed: ' + error.message, 'error');
         }
+    });
+
+    // Make homepage title clickable
+    document.getElementById('homepage-title').addEventListener('click', function() {
+        loadDashboard();
     });
 
     // Initialize authentication (this will update dashboard after loading API data)

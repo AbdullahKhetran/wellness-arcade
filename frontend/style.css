@@ -46,6 +46,15 @@ body {
     margin: 0;
     font-size: 2.2em;
 }
+
+#homepage-title {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+#homepage-title:hover {
+    color: #ffeb3b;
+}
 .ghibli-header p {
     margin: 5px 0 0;
     font-size: 1.1em;
@@ -341,18 +350,27 @@ button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; 
     animation: none; 
 }
 
+.back-button.top-left {
+    margin-top: 0;
+    margin-bottom: 20px;
+    align-self: flex-start;
+}
+
 .back-button:hover {
     background-color: #555;
     transform: translateY(-1px);
 }
 
 /* Hydration styles */
-.plant-container { height: 150px; margin-bottom: 20px; position: relative; width: 100%; max-width: 200px;} /* Constrain plant size */
+.plant-container { height: 250px; margin: 0 auto 20px auto; position: relative; width: 100%; max-width: 200px; text-align: center;} /* Centered container with centered text */
 #plant { width: 50px; height: 30px; background-color: var(--secondary-color); border-radius: 0 0 10px 10px; margin: 0 auto; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); transition: all 0.5s ease-in-out; }
-.plant-level-1 { height: 45px !important; background-color: #4b8348 !important; border-radius: 10px 10px 0 0 !important; }
-.plant-level-2 { height: 65px !important; background-color: #5d9e3d !important; border-radius: 15px 15px 0 0 !important; }
-.plant-level-3 { height: 85px !important; background-color: #8cbf6c !important; border-radius: 20px 20px 0 0 !important; }
-.plant-level-4 { height: 120px !important; background-color: #b6d7a8 !important; border-radius: 25px 25px 0 0 !important; box-shadow: 0 -8px 10px rgba(255, 192, 203, 0.7); }
+.plant-level-1 { height: 45px !important; background-color: #a8e6a3 !important; border-radius: 10px 10px 0 0 !important; }
+.plant-level-2 { height: 65px !important; background-color: #8bc34a !important; border-radius: 15px 15px 0 0 !important; }
+.plant-level-3 { height: 85px !important; background-color: #689f38 !important; border-radius: 20px 20px 0 0 !important; }
+.plant-level-4 { height: 120px !important; background-color: #558b2f !important; border-radius: 25px 25px 0 0 !important; box-shadow: 0 -8px 10px rgba(76, 175, 80, 0.3); }
+.plant-level-5 { height: 140px !important; background-color: #4caf50 !important; border-radius: 30px 30px 0 0 !important; box-shadow: 0 -10px 15px rgba(76, 175, 80, 0.4); }
+.plant-level-6 { height: 160px !important; background-color: #388e3c !important; border-radius: 35px 35px 0 0 !important; box-shadow: 0 -12px 20px rgba(76, 175, 80, 0.5); }
+.plant-level-7 { height: 180px !important; background-color: #2e7d32 !important; border-radius: 40px 40px 0 0 !important; box-shadow: 0 -15px 25px rgba(76, 175, 80, 0.6); }
 
 /* Sparkle Smile styles */
 .character-container { height: 150px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
