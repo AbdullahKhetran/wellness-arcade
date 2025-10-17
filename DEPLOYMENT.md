@@ -25,7 +25,8 @@ The following changes have been made for Railway compatibility:
 - ✅ **CORS**: Configurable origins for production
 - ✅ **Static Files**: FastAPI now serves frontend files
 - ✅ **Auto-Detection**: Frontend automatically detects production vs development
-- ✅ **Railway Config**: Added `railway.toml` and `Procfile`
+- ✅ **Railway Config**: Added `railway.toml`, `nixpacks.toml`, and `Procfile`
+- ✅ **Build Configuration**: Railway discovers backend folder structure automatically
 
 ## 🚀 Railway Deployment Steps
 
@@ -76,8 +77,12 @@ The following changes have been made for Railway compatibility:
 ```
 wellness-arcade/
 ├── backend/           # FastAPI backend
+│   ├── requirements.txt  # Python dependencies
+│   ├── main.py          # FastAPI application
+│   └── ...              # Other backend files
 ├── frontend/          # Static frontend files
 ├── railway.toml       # Railway configuration
+├── nixpacks.toml      # Build configuration
 ├── Procfile          # Process definition
 └── env.example       # Environment variables template
 ```
