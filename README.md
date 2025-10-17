@@ -46,7 +46,7 @@ A collection of mini interactive games designed to reinforce healthy habits thro
 ## Built at [HackVortex Codestorm #5](https://hackvortex-codestorm-5.devpost.com/) by
 - [Dua Fatima](https://github.com/DuaFatima-1717) Frontend Developer
 - [Abdullah Khetran](https://github.com/AbdullahKhetran) Full Stack Developer
-- [Sadia]() Domain Expert (Medical Advisor)
+- [Sadia Asif](https://devpost.com/sadia-asif107) Domain Expert (Medical Advisor)
 - [Marium Noor Khetran](https://github.com/mariumnoorkhetran) Content and Submission
 
 
