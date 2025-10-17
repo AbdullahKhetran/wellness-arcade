@@ -43,7 +43,18 @@ A collection of mini interactive games designed to reinforce healthy habits thro
 - **Deployment**: Railway (with automatic database switching)
 
 
+## Built at [HackVortex Codestorm #5](https://hackvortex-codestorm-5.devpost.com/) by
+- [Dua Fatima](https://github.com/DuaFatima-1717) Frontend Developer
+- [Abdullah Khetran](https://github.com/AbdullahKhetran) Full Stack Developer
+- [Sadia]() Domain Expert (Medical Advisor)
+- [Marium Noor Khetran](https://github.com/mariumnoorkhetran) Content and Submission
 
+
+## AI Usage Disclosure
+
+The following AI services were utilized in the development process:
+- ChatGPT: For idea generation and conceptual support.
+- Cursor IDE: For code generation, documentation and implementation assistance.
 
 
 ## Quick Start (Localhost)
@@ -61,13 +72,6 @@ python main.py
 ```
 
 Open **http://localhost:8000** in your browser to access the Wellness Arcade.
-
-
-
-
-
-
-
 
 
 
@@ -99,7 +103,7 @@ wellness-arcade/
 ```
 
 
-###
+### License
 This project is open source and available under the MIT License.
 
 
