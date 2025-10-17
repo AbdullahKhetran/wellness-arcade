@@ -1,5 +1,5 @@
 let waterLogged = 0;
-let brushLogged = { morning: false, night: false };
+let brushLogged = 0;
 let breathingSessions = 0;
 let brainHighScore = 0;
 let currentBrainSequence = [];
@@ -7,6 +7,7 @@ let playerSequence = [];
 let isPlayerTurn = false;
 let sprintCurrentScore = 0;
 let breathingInterval = null;
+let breathingCycleInterval = null;
 let currentMoodSession = null;
 let affirmationWords = [];
 let userAffirmation = [];
@@ -141,7 +142,7 @@ async function handleLogout() {
         
         // Reset dashboard data
         waterLogged = 0;
-        brushLogged = { morning: false, night: false };
+        brushLogged = 0;
         breathingSessions = 0;
         updateDashboard();
     } catch (error) {
@@ -157,7 +158,7 @@ const playSound = (emoji) => {
 
 function updateDashboard() {
     document.getElementById('waterCount').textContent = `${waterLogged}/8`;
-    document.getElementById('brushingCount').textContent = `${(brushLogged.morning ? 1 : 0) + (brushLogged.night ? 1 : 0)}/2`;
+    document.getElementById('brushingCount').textContent = `${brushLogged}`;
     document.getElementById('breathingCount').textContent = breathingSessions;
     document.getElementById('brainScore').textContent = brainHighScore;
     
@@ -210,7 +211,7 @@ const gameTemplates = {
             <div id="breathing-circle" class="breathing-paused"></div>
         </div>
         <p id="breathing-timer">Time: 0s</p>
-        <button id="startBreathingBtn">Start 30s Exercise (🎶)</button>
+        <button id="startBreathingBtn">Start 16s Exercise</button>
     `,
     brain: `
         ${BACK_BUTTON_HTML}
@@ -291,6 +292,10 @@ function loadDashboard() {
         clearInterval(breathingInterval);
         breathingInterval = null;
     }
+    if (breathingCycleInterval) {
+        clearInterval(breathingCycleInterval);
+        breathingCycleInterval = null;
+    }
     
     // Show the game selection grid
     const gameSelectionGrid = document.querySelector('.game-selection-grid');
@@ -319,6 +324,10 @@ function loadGame(gameName) {
     if (breathingInterval) {
         clearInterval(breathingInterval);
         breathingInterval = null;
+    }
+    if (breathingCycleInterval) {
+        clearInterval(breathingCycleInterval);
+        breathingCycleInterval = null;
     }
 
     // Hide the game selection grid
@@ -436,21 +445,25 @@ function updateSmileView() {
     const smileElement = document.getElementById('smile');
     const statusDisplay = document.getElementById('smileStatus');
 
-    let count = (brushLogged.morning ? 1 : 0) + (brushLogged.night ? 1 : 0);
+    let count = brushLogged;
     
     let emoji = '😐';
-    if (count === 1) emoji = '🙂';
-    if (count === 2) emoji = '😁';
+    if (count >= 1) emoji = '😊';
+    if (count >= 2) emoji = '😁';
+    if (count >= 4) emoji = '🤩';
     smileElement.textContent = emoji;
     
-    smileElement.style.borderColor = count === 2 ? '#4CAF50' : (count === 1 ? '#8cc63f' : '#ccc');
-    smileElement.style.boxShadow = count === 2 ? '0 0 15px #ffeb3b' : 'none'; 
+    smileElement.style.borderColor = count >= 2 ? '#4CAF50' : (count >= 1 ? '#8cc63f' : '#ccc');
+    smileElement.style.boxShadow = count >= 2 ? '0 0 15px #ffeb3b' : 'none'; 
     
-    if (count === 2) {
+    if (count >= 4) {
+        statusDisplay.textContent = 'Ultimate Sparkle! Super clean teeth! 🌟';
+        playSound('🌟');
+    } else if (count >= 2) {
         statusDisplay.textContent = 'Maximum Sparkle! Teeth are happy!';
         playSound('🌟');
-    } else if (count === 1) {
-        statusDisplay.textContent = 'Halfway there! Log your next brush.';
+    } else if (count >= 1) {
+        statusDisplay.textContent = 'Good start! Keep brushing for healthy teeth.';
     } else {
         statusDisplay.textContent = 'Time to brush and make those teeth happy!';
     }
@@ -458,19 +471,15 @@ function updateSmileView() {
 }
 
 function handleMorningBrush() {
-    if (!brushLogged.morning) {
-        brushLogged.morning = true;
-        updateSmileView();
-        alert("Morning routine complete! 😊");
-    }
+    brushLogged++;
+    updateSmileView();
+    alert("Morning routine complete! 😊");
 }
 
 function handleNightBrush() {
-    if (!brushLogged.night) {
-        brushLogged.night = true;
-        updateSmileView();
-        alert("Night routine complete! Good night, Sparkle Hero! 🌙");
-    }
+    brushLogged++;
+    updateSmileView();
+    alert("Night routine complete! Good night, Sparkle Hero! 🌙");
 }
 
 // --- 4. Brain Sprint Functions ---
@@ -559,21 +568,48 @@ function startBreathing() {
     button.disabled = true;
     button.textContent = 'Breathing...';
     
-    let timeLeft = 30;
-    let isInhaling = true;
+    let currentTime = 0;
+    let currentPhase = 0; // 0: inhale, 1: hold, 2: exhale, 3: hold
+    
+    // Set initial state - circle starts at normal size
+    circle.className = 'breathing-paused';
     
     const updateTimer = async () => {
-        timer.textContent = `Time: ${timeLeft}s`;
-        timeLeft--;
+        timer.textContent = `Time: ${currentTime}s`;
         
-        if (timeLeft < 0) {
+        // Determine current phase based on current time (4 equal stages of 4 seconds each)
+        if (currentTime >= 12) {
+            // Stage 4: Hold breath (12-15 seconds) - stay at initial size after exhale
+            currentPhase = 3;
+            circle.className = 'breathing-hold-exhaled';
+            cue.textContent = 'Hold breath';
+        } else if (currentTime >= 8) {
+            // Stage 3: Exhale (8-11 seconds) - shrink back to initial size
+            currentPhase = 2;
+            circle.className = 'breathing-out';
+            cue.textContent = 'Exhale';
+        } else if (currentTime >= 4) {
+            // Stage 2: Hold breath (4-7 seconds) - stay at increased size after inhale
+            currentPhase = 1;
+            circle.className = 'breathing-hold-inhaled';
+            cue.textContent = 'Hold breath';
+        } else {
+            // Stage 1: Inhale (0-3 seconds) - grow from initial size
+            currentPhase = 0;
+            circle.className = 'breathing-in';
+            cue.textContent = 'Inhale';
+        }
+        
+        currentTime++;
+        
+        if (currentTime > 15) {
             clearInterval(breathingInterval);
             breathingInterval = null;
             
             // Log to API if authenticated
             if (isAuthenticated) {
                 try {
-                    await api.logBreathing(30);
+                    await api.logBreathing(16);
                     breathingSessions++;
                     updateDashboard();
                     showAuthStatus('Breathing session logged!', 'success');
@@ -588,31 +624,16 @@ function startBreathing() {
             }
             
             circle.className = 'breathing-paused';
-            cue.textContent = 'Complete!';
+            cue.textContent = 'Completed!';
             button.disabled = false;
-            button.textContent = 'Start 30s Exercise (🎶)';
+            button.textContent = 'Start 16s Exercise';
             timer.textContent = 'Time: 0s';
-            
-            alert('Great job! You completed a breathing session! 🧘');
             return;
         }
     };
     
-    const breathingCycle = () => {
-        if (isInhaling) {
-            circle.className = 'breathing-in';
-            cue.textContent = 'Breathe In...';
-            isInhaling = false;
-        } else {
-            circle.className = 'breathing-out';
-            cue.textContent = 'Breathe Out...';
-            isInhaling = true;
-        }
-    };
-    
     breathingInterval = setInterval(updateTimer, 1000);
-    setInterval(breathingCycle, 5000);
-    breathingCycle(); // Start immediately
+    updateTimer(); // Start immediately
 }
 
 // --- 6. Mood Watch Functions ---
@@ -825,6 +846,11 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDashboard();
     });
 
+    // Reset stats button
+    document.getElementById('resetStatsBtn').addEventListener('click', function() {
+        handleResetStats();
+    });
+
     // Initialize authentication (this will update dashboard after loading API data)
     initAuth();
 });
@@ -855,32 +881,10 @@ async function loadUserWellnessData() {
         waterLogged = hydrationStatus.glasses_today;
         console.log('Hydration data loaded:', hydrationStatus);
         
-        // Load detailed brushing data
-        let brushingDetailed;
-        try {
-            console.log('Attempting to load detailed brushing data...');
-            brushingDetailed = await api.getBrushingDetailed();
-            brushLogged.morning = brushingDetailed.morning_completed;
-            brushLogged.night = brushingDetailed.night_completed;
-            console.log('Detailed brushing data loaded:', brushingDetailed);
-        } catch (detailedError) {
-            console.log('Detailed brushing data failed, falling back to basic status...');
-            const brushingStatus = await api.getBrushingStatus();
-            const brushingCount = brushingStatus.brushing_today;
-            
-            // Determine morning/night based on count
-            if (brushingCount >= 2) {
-                brushLogged.morning = true;
-                brushLogged.night = true;
-            } else if (brushingCount === 1) {
-                brushLogged.morning = true;
-                brushLogged.night = false;
-            } else {
-                brushLogged.morning = false;
-                brushLogged.night = false;
-            }
-            console.log('Basic brushing data loaded:', brushingStatus);
-        }
+        // Load brushing data
+        const brushingStatus = await api.getBrushingStatus();
+        brushLogged = brushingStatus.brushing_today;
+        console.log('Brushing data loaded:', brushingStatus);
         
         // Load breathing data
         const breathingStatus = await api.getBreathingStatus();
@@ -899,7 +903,7 @@ async function loadUserWellnessData() {
         console.error('Failed to load user wellness data:', error);
         // Reset to 0 if API fails
         waterLogged = 0;
-        brushLogged = { morning: false, night: false };
+        brushLogged = 0;
         breathingSessions = 0;
         updateDashboard();
     }
@@ -932,13 +936,13 @@ async function handleMorningBrushWithAPI() {
     }
     
     try {
-        await api.logBrushing('morning');
-        brushLogged.morning = true;
+        const response = await api.logBrushing('morning');
+        brushLogged = response.total_today;
         updateSmileView();
-        showAuthStatus('Morning routine logged!', 'success');
+        showAuthStatus(`Morning routine logged! Total today: ${brushLogged}`, 'success');
     } catch (error) {
         console.error('Failed to log brushing:', error);
-        brushLogged.morning = true;
+        brushLogged++;
         updateSmileView();
     }
 }
@@ -950,13 +954,13 @@ async function handleNightBrushWithAPI() {
     }
     
     try {
-        await api.logBrushing('night');
-        brushLogged.night = true;
+        const response = await api.logBrushing('night');
+        brushLogged = response.total_today;
         updateSmileView();
-        showAuthStatus('Night routine logged!', 'success');
+        showAuthStatus(`Night routine logged! Total today: ${brushLogged}`, 'success');
     } catch (error) {
         console.error('Failed to log brushing:', error);
-        brushLogged.night = true;
+        brushLogged++;
         updateSmileView();
     }
 }
@@ -975,6 +979,36 @@ async function handleBreathingWithAPI() {
     } catch (error) {
         console.error('Failed to log breathing:', error);
         // Still run the breathing exercise locally
+    }
+}
+
+async function handleResetStats() {
+    if (!isAuthenticated) {
+        alert('Please login to reset your stats!');
+        return;
+    }
+    
+    const confirmed = confirm('Are you sure you want to reset all your wellness stats for today? This action cannot be undone.');
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        await api.resetAllStats();
+        
+        // Reset local variables
+        waterLogged = 0;
+        brushLogged = 0;
+        breathingSessions = 0;
+        
+        // Update dashboard
+        updateDashboard();
+        
+        showAuthStatus('All stats have been reset!', 'success');
+        console.log('All wellness stats reset successfully');
+    } catch (error) {
+        console.error('Failed to reset stats:', error);
+        showAuthStatus('Failed to reset stats: ' + error.message, 'error');
     }
 }
 

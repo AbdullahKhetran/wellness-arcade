@@ -225,7 +225,10 @@ async def log_hydration(log: HydrationLog, username: str = Depends(get_current_u
     daily_record.count += log.glasses
     
     # Update data JSON
-    data_list = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        data_list = []
+    else:
+        data_list = json.loads(daily_record.data_json)
     data_list.append({
         "glasses": log.glasses,
         "timestamp": datetime.now().isoformat()
@@ -264,7 +267,10 @@ async def log_brushing(log: BrushingLog, username: str = Depends(get_current_use
     daily_record.count += 1
     
     # Update data JSON
-    data_list = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        data_list = []
+    else:
+        data_list = json.loads(daily_record.data_json)
     data_list.append({
         "session_type": log.session_type,
         "timestamp": datetime.now().isoformat()
@@ -286,7 +292,10 @@ async def get_brushing_detailed(username: str = Depends(get_current_user), db: S
     daily_record = get_user_daily_data(username, "brushing", db)
     
     # Parse the detailed data from JSON
-    brushing_sessions = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        brushing_sessions = []
+    else:
+        brushing_sessions = json.loads(daily_record.data_json)
     
     # Determine which sessions were completed
     morning_completed = any(session["session_type"] == "morning" for session in brushing_sessions)
@@ -322,7 +331,10 @@ async def log_breathing(log: BreathingLog, username: str = Depends(get_current_u
     daily_record.count += 1
     
     # Update data JSON
-    data_list = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        data_list = []
+    else:
+        data_list = json.loads(daily_record.data_json)
     data_list.append({
         "duration_seconds": log.duration_seconds,
         "timestamp": datetime.now().isoformat()
@@ -357,7 +369,10 @@ async def submit_puzzle_response(response: PuzzleResponse, username: str = Depen
     daily_record.count += 1
     
     # Update data JSON
-    data_list = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        data_list = []
+    else:
+        data_list = json.loads(daily_record.data_json)
     data_list.append({
         "puzzle_id": response.puzzle_id,
         "user_sequence": response.user_sequence,
@@ -397,7 +412,10 @@ async def log_emotion(log: EmotionLog, username: str = Depends(get_current_user)
     daily_record.count += 1
     
     # Update data JSON
-    data_list = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        data_list = []
+    else:
+        data_list = json.loads(daily_record.data_json)
     data_list.append({
         "scenario_id": log.scenario_id,
         "selected_mood": log.selected_mood,
@@ -440,7 +458,10 @@ async def submit_affirmation(affirmation: AffirmationSubmit, username: str = Dep
     daily_record.count += 1
     
     # Update data JSON
-    data_list = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        data_list = []
+    else:
+        data_list = json.loads(daily_record.data_json)
     data_list.append({
         "words": affirmation.words,
         "generated_affirmation": affirmation.generated_affirmation,
@@ -464,8 +485,44 @@ async def generate_affirmation(words: str):
 @app.get("/api/affirmations/history/")
 async def get_affirmation_history(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
     daily_record = get_user_daily_data(username, "affirmations", db)
-    history_data = json.loads(daily_record.data_json)
+    if daily_record.data_json is None:
+        history_data = []
+    else:
+        history_data = json.loads(daily_record.data_json)
     return {"history": history_data}
+
+@app.post("/api/stats/reset/")
+async def reset_all_stats(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Reset all wellness stats for the current user"""
+    today = date.today().strftime("%Y-%m-%d")
+    
+    # Get user object first
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all daily records for today
+    records = db.query(DailyWellnessData).filter(
+        DailyWellnessData.user_id == user.id,
+        DailyWellnessData.date == today
+    ).all()
+    
+    # Reset counts and clear data_json for all wellness data types
+    wellness_types = ["hydration", "brushing", "breathing", "puzzles", "emotions", "affirmations"]
+    
+    for record in records:
+        if record.data_type in wellness_types:
+            record.count = 0
+            record.data_json = "[]"
+            record.updated_at = datetime.utcnow()
+    
+    db.commit()
+    
+    return {
+        "message": "All wellness stats have been reset",
+        "reset_date": today,
+        "reset_types": wellness_types
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

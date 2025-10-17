@@ -208,6 +208,18 @@ class WellnessAPI {
             return false;
         }
     }
+
+    async resetAllStats() {
+        try {
+            const response = await this.makeRequest('/api/stats/reset/', {
+                method: 'POST'
+            });
+            return response;
+        } catch (error) {
+            console.error('Failed to reset stats:', error);
+            throw new Error('Failed to reset stats: ' + error.message);
+        }
+    }
 }
 
 // Create global API instance
