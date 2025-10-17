@@ -67,6 +67,9 @@ function updateAuthMenu() {
         registerBtn.style.display = 'none';
         logoutBtn.style.display = 'block';
         profileBtn.style.display = 'block';
+        
+        // Remove pulse animation when logged in
+        authMenuBtn.classList.remove('logged-out');
     } else {
         // User is not logged in
         authMenuIcon.textContent = '👤';
@@ -75,6 +78,9 @@ function updateAuthMenu() {
         registerBtn.style.display = 'block';
         logoutBtn.style.display = 'none';
         profileBtn.style.display = 'none';
+        
+        // Add pulse animation when logged out to grab attention
+        authMenuBtn.classList.add('logged-out');
     }
 }
 
@@ -170,7 +176,7 @@ const gameTemplates = {
             <p id="plantStatus">Your little sprout is thirsty...</p>
             <div id="plant" class="plant-level-0"></div>
         </div>
-        <button id="logWaterBtn">Log 1 Glass (✨)</button>
+        <button id="logWaterBtn" class="pulse">Log 1 Glass (✨)</button>
         ${BACK_BUTTON_HTML}
     `,
     smile: `
@@ -182,8 +188,8 @@ const gameTemplates = {
             <p id="smileStatus">Keep those teeth sparkling!</p>
             <div id="smile" class="smile-level-0"></div>
         </div>
-        <button id="logBrushMorningBtn">Log Morning Brush</button>
-        <button id="logBrushNightBtn">Log Evening Brush</button>
+        <button id="logBrushMorningBtn" class="pulse">Log Morning Brush</button>
+        <button id="logBrushNightBtn" class="pulse">Log Evening Brush</button>
         ${BACK_BUTTON_HTML}
     `,
     breathe: `
@@ -196,7 +202,7 @@ const gameTemplates = {
             <div id="breathing-circle" class="breathing-paused"></div>
         </div>
         <p id="breathing-timer">Time: 0s</p>
-        <button id="startBreathingBtn">Start 30s Exercise (🎶)</button>
+        <button id="startBreathingBtn" class="pulse">Start 30s Exercise (🎶)</button>
         ${BACK_BUTTON_HTML}
     `,
     brain: `
@@ -214,7 +220,7 @@ const gameTemplates = {
             </div>
             <p id="sprint-message">Press Start to begin!</p>
         </div>
-        <button id="startSprintBtn">Start Sprint (▶️)</button>
+        <button id="startSprintBtn" class="pulse">Start Sprint (▶️)</button>
         ${BACK_BUTTON_HTML}
     `,
     mood: `
@@ -238,7 +244,7 @@ const gameTemplates = {
                 <p id="tip-text"></p>
             </div>
         </div>
-        <button id="nextMoodBtn">Next Scenario</button>
+        <button id="nextMoodBtn" class="pulse">Next Scenario</button>
         ${BACK_BUTTON_HTML}
     `,
     affirmation: `
@@ -261,7 +267,7 @@ const gameTemplates = {
                 <p id="final-affirmation"></p>
             </div>
         </div>
-        <button id="generate-affirmation">Generate Affirmation</button>
+        <button id="generate-affirmation" class="pulse">Generate Affirmation</button>
         ${BACK_BUTTON_HTML}
     `
 };

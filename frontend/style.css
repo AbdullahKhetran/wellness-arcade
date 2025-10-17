@@ -69,6 +69,12 @@ body {
     font-size: 1em;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
+    animation: none; /* No animation by default */
+}
+
+/* Pulse animation only when user is logged out */
+.auth-menu-btn.logged-out {
+    animation: pulse 2s infinite;
 }
 
 .auth-menu-btn:hover {
@@ -310,7 +316,12 @@ body {
 button {
     background-color: var(--primary-color); color: white; border: none; padding: 10px 15px;
     margin-top: 10px; border-radius: 8px; cursor: pointer; font-size: 16px;
-    transition: background-color 0.3s, transform 0.1s; animation: pulse 2s infinite; 
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+/* Pulse animation for game buttons and call-to-action buttons */
+button.pulse {
+    animation: pulse 2s infinite;
 }
 button:hover:not(:disabled) { background-color: #555; transform: translateY(-2px); }
 button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; }
