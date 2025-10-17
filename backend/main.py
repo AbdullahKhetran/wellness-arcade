@@ -55,6 +55,9 @@ class AffirmationSubmit(BaseModel):
     words: List[str]
     generated_affirmation: str
 
+class LogoutRequest(BaseModel):
+    session_token: str
+
 # Helper functions
 def get_current_user(authorization: str = Header(None)):
     if not authorization:
@@ -112,9 +115,9 @@ async def login(user: UserLogin):
     return {"message": "Login successful", "session_token": session_token}
 
 @app.post("/api/logout/")
-async def logout(session_token: str):
-    if session_token in user_sessions:
-        del user_sessions[session_token]
+async def logout(logout_request: LogoutRequest):
+    if logout_request.session_token in user_sessions:
+        del user_sessions[logout_request.session_token]
     return {"message": "Logout successful"}
 
 @app.get("/api/user/")

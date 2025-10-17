@@ -36,13 +36,45 @@ async function initAuth() {
             isAuthenticated = true;
             hideAuthModal();
             showUserWelcome();
+            updateAuthMenu();
         } catch (error) {
             console.error('Auth check failed:', error);
             api.logout();
-            showAuthModal();
+            updateAuthMenu();
+            showUserWelcome();
         }
     } else {
-        showAuthModal();
+        updateAuthMenu();
+        showUserWelcome();
+    }
+}
+
+// Update authentication menu based on login status
+function updateAuthMenu() {
+    const authMenuBtn = document.getElementById('authMenuBtn');
+    const authMenuIcon = document.getElementById('authMenuIcon');
+    const authMenuText = document.getElementById('authMenuText');
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const profileBtn = document.getElementById('profileBtn');
+
+    if (isAuthenticated && currentUser) {
+        // User is logged in
+        authMenuIcon.textContent = '👤';
+        authMenuText.textContent = currentUser.username;
+        loginBtn.style.display = 'none';
+        registerBtn.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        profileBtn.style.display = 'block';
+    } else {
+        // User is not logged in
+        authMenuIcon.textContent = '👤';
+        authMenuText.textContent = 'Account';
+        loginBtn.style.display = 'block';
+        registerBtn.style.display = 'block';
+        logoutBtn.style.display = 'none';
+        profileBtn.style.display = 'none';
     }
 }
 
@@ -55,9 +87,55 @@ function hideAuthModal() {
 }
 
 function showUserWelcome() {
+    const header = document.querySelector('.ghibli-header p');
     if (currentUser) {
-        const header = document.querySelector('.ghibli-header p');
         header.textContent = `Welcome back, ${currentUser.username}! Mindful Habits to ensure a healthy life`;
+    } else {
+        header.textContent = 'Mindful Habits to ensure a healthy life';
+    }
+}
+
+// Authentication menu dropdown functionality
+function toggleAuthDropdown() {
+    const dropdown = document.getElementById('authDropdown');
+    const menuBtn = document.getElementById('authMenuBtn');
+    
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+        menuBtn.classList.remove('active');
+    } else {
+        dropdown.classList.add('show');
+        menuBtn.classList.add('active');
+    }
+}
+
+function closeAuthDropdown() {
+    const dropdown = document.getElementById('authDropdown');
+    const menuBtn = document.getElementById('authMenuBtn');
+    
+    dropdown.classList.remove('show');
+    menuBtn.classList.remove('active');
+}
+
+// Handle logout
+async function handleLogout() {
+    try {
+        await api.logout();
+        isAuthenticated = false;
+        currentUser = null;
+        updateAuthMenu();
+        showUserWelcome(); // Reset welcome message
+        closeAuthDropdown();
+        showAuthStatus('Logged out successfully!', 'success');
+        
+        // Reset dashboard data
+        waterLogged = 0;
+        brushLogged = { morning: false, night: false };
+        breathingSessions = 0;
+        updateDashboard();
+    } catch (error) {
+        console.error('Logout failed:', error);
+        showAuthStatus('Logout failed: ' + error.message, 'error');
     }
 }
 
@@ -635,6 +713,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Authentication menu event handlers
+    document.getElementById('authMenuBtn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleAuthDropdown();
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', function() {
+        showAuthModal();
+        closeAuthDropdown();
+        // Switch to login tab
+        document.querySelector('[data-tab="login"]').click();
+    });
+
+    document.getElementById('registerBtn').addEventListener('click', function() {
+        showAuthModal();
+        closeAuthDropdown();
+        // Switch to register tab
+        document.querySelector('[data-tab="register"]').click();
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        handleLogout();
+    });
+
+    document.getElementById('profileBtn').addEventListener('click', function() {
+        // For now, just show a simple alert. Could be expanded to show profile info
+        alert(`Profile: ${currentUser.username}\nEmail: ${currentUser.email || 'Not provided'}`);
+        closeAuthDropdown();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const authMenuContainer = document.querySelector('.auth-menu-container');
+        if (!authMenuContainer.contains(e.target)) {
+            closeAuthDropdown();
+        }
+    });
+
     // Login form
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -647,6 +763,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isAuthenticated = true;
             hideAuthModal();
             showUserWelcome();
+            updateAuthMenu();
             showAuthStatus('Login successful!', 'success');
         } catch (error) {
             showAuthStatus('Login failed: ' + error.message, 'error');

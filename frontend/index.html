@@ -9,8 +9,25 @@
 <body>
 
     <header class="ghibli-header">
-        <h1>🌿 Wellness Arcade 💧</h1>
-        <p>Mindful Habits to ensure a healthy life</p>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>🌿 Wellness Arcade 💧</h1>
+                <p>Mindful Habits to ensure a healthy life</p>
+            </div>
+            <div class="auth-menu-container">
+                <button id="authMenuBtn" class="auth-menu-btn">
+                    <span id="authMenuIcon">👤</span>
+                    <span id="authMenuText">Account</span>
+                    <span id="authMenuArrow">▼</span>
+                </button>
+                <div id="authDropdown" class="auth-dropdown">
+                    <button id="loginBtn" class="auth-dropdown-item">Login</button>
+                    <button id="registerBtn" class="auth-dropdown-item">Register</button>
+                    <button id="logoutBtn" class="auth-dropdown-item" style="display: none;">Logout</button>
+                    <button id="profileBtn" class="auth-dropdown-item" style="display: none;">Profile</button>
+                </div>
+            </div>
+        </div>
     </header>
 
     <div class="arcade-container">
