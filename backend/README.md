@@ -11,73 +11,34 @@ FastAPI backend server for the Wellness Arcade application.
 - Session management with automatic expiration
 - Secure authentication with bcrypt password hashing
 
-## API Endpoints
+## 📡 API Endpoints
 
 ### General
 - `GET /api/ping/` - Test API connectivity
+- `GET /api/tip/` - Get daily wellness tip
+
+### Authentication
 - `POST /api/register/` - Register new user
 - `POST /api/login/` - User login
 - `POST /api/logout/` - User logout
 - `GET /api/user/` - Get user profile
-- `GET /api/tip/` - Get daily wellness tip
 
-### Hydration Hero
-- `POST /api/hydration/log/` - Log water intake
-- `GET /api/hydration/status/` - Get daily hydration status
-- `POST /api/hydration/reset/` - Reset daily hydration data
+### Game-Specific Endpoints
+- **Hydration**: `/api/hydration/log/`, `/api/hydration/status/`, `/api/hydration/reset/`
+- **Brushing**: `/api/brushing/log/`, `/api/brushing/status/`, `/api/brushing/detailed/`, `/api/brushing/reset/`
+- **Breathing**: `/api/breathing/log/`, `/api/breathing/status/`
+- **Brain Puzzles**: `/api/puzzles/`, `/api/puzzles/submit/`, `/api/puzzles/status/`
+- **Emotions**: `/api/emotions/status/`, `/api/emotions/session/`, `/api/emotions/log/`, `/api/emotions/tip/`
+- **Affirmations**: `/api/affirmations/status/`, `/api/affirmations/words/`, `/api/affirmations/submit/`, `/api/affirmations/generate/`, `/api/affirmations/history/`
 
-### Sparkle Smile (Brushing)
-- `POST /api/brushing/log/` - Log teeth brushing
-- `GET /api/brushing/status/` - Get daily brushing status
-- `POST /api/brushing/reset/` - Reset daily brushing data
 
-### Breathe & Balance
-- `POST /api/breathing/log/` - Log breathing session
-- `GET /api/breathing/status/` - Get breathing session count
-
-### Brain Sprint
-- `GET /api/puzzles/` - Get available puzzles
-- `POST /api/puzzles/submit/` - Submit puzzle response
-- `GET /api/puzzles/status/` - Get puzzle completion status
-
-### Mood Watch
-- `GET /api/emotions/session/` - Get emotion scenario
-- `POST /api/emotions/log/` - Log emotional response
-- `GET /api/emotions/tip/` - Get wellness tip for mood
-
-### Affirmation Builder
-- `GET /api/affirmations/words/` - Get word bank
-- `POST /api/affirmations/submit/` - Save user affirmation
-- `GET /api/affirmations/generate/` - Generate affirmation
-- `GET /api/affirmations/history/` - Get affirmation history
-
-## Installation
-
-1. Install Python 3.8+ if not already installed
-2. Install dependencies and initialize database:
-   ```bash
-   python install_database.py
-   ```
-
-## Running the Server
-
-### Option 1: Using the startup script
-```bash
-python start_server.py
-```
-
-### Option 2: Direct uvicorn command
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
 
 ## Database
 
-The application uses SQLite for data storage:
+For localhost the application uses SQLite for data storage:
 - **Database file**: `wellness_arcade.db`
 - **Tables**: users, user_sessions, daily_wellness_data
 - **Features**: Automatic table creation, password hashing, session management
-- **Backup**: Simply copy the `.db` file to backup data
 
 The server will be available at:
 - API: http://localhost:8000
