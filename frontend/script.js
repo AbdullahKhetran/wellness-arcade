@@ -98,14 +98,6 @@ function hideAuthModal() {
     document.getElementById('authModal').style.display = 'none';
 }
 
-function showUserWelcome() {
-    const header = document.querySelector('.ghibli-header p');
-    if (currentUser) {
-        header.textContent = `Welcome back, ${currentUser.username}! Mindful Habits to ensure a healthy life`;
-    } else {
-        header.textContent = 'Mindful Habits to ensure a healthy life';
-    }
-}
 
 // Authentication menu dropdown functionality
 function toggleAuthDropdown() {
@@ -157,8 +149,8 @@ const playSound = (emoji) => {
 };
 
 function updateDashboard() {
-    document.getElementById('waterCount').textContent = `${waterLogged}/8`;
-    document.getElementById('brushingCount').textContent = `${brushLogged}`;
+    document.getElementById('waterCount').textContent = waterLogged;
+    document.getElementById('brushingCount').textContent = brushLogged;
     document.getElementById('breathingCount').textContent = breathingSessions;
     document.getElementById('brainScore').textContent = brainHighScore;
     
