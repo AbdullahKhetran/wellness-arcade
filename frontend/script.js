@@ -217,7 +217,7 @@ const gameTemplates = {
             </div>
             <p id="sprint-message">Press Start to begin!</p>
         </div>
-        <button id="startSprintBtn">Start Sprint</button>
+        <button id="startSprintBtn">Start</button>
     `,
     mood: `
         ${BACK_BUTTON_HTML}
@@ -362,7 +362,11 @@ function loadGame(gameName) {
         document.getElementById('startSprintBtn').addEventListener('click', startGame);
         sprintCurrentScore = 0; 
         document.getElementById('sprint-current-score').textContent = sprintCurrentScore;
-        document.querySelectorAll('.sprint-tile').forEach(tile => tile.addEventListener('click', handleTileClick));
+        document.querySelectorAll('.sprint-tile').forEach(tile => {
+            tile.addEventListener('click', handleTileClick);
+            tile.disabled = true; // Initially disable tiles
+            tile.classList.add('disabled');
+        });
     }
 
     // --- Mood Watch Setup ---
@@ -474,6 +478,12 @@ function startGame() {
     document.getElementById('sprint-message').textContent = 'Watch the sequence...';
     document.getElementById('startSprintBtn').disabled = true;
     
+    // Disable all tiles initially
+    document.querySelectorAll('.sprint-tile').forEach(tile => {
+        tile.disabled = true;
+        tile.classList.add('disabled');
+    });
+    
     setTimeout(() => {
         addToSequence();
     }, 1000);
@@ -501,6 +511,11 @@ function showSequence() {
             setTimeout(() => {
                 isPlayerTurn = true;
                 document.getElementById('sprint-message').textContent = 'Your turn! Click the tiles in order.';
+                // Enable tiles for player input
+                document.querySelectorAll('.sprint-tile').forEach(tile => {
+                    tile.disabled = false;
+                    tile.classList.remove('disabled');
+                });
             }, 500);
         }
     }, 600);
@@ -515,14 +530,25 @@ function handleTileClick(event) {
     // Check if the sequence is correct so far
     const currentIndex = playerSequence.length - 1;
     if (playerSequence[currentIndex] !== currentBrainSequence[currentIndex]) {
-        // Wrong sequence
-        document.getElementById('sprint-message').textContent = `Game Over! Score: ${sprintCurrentScore}`;
+        // Wrong sequence - Game Over
+        isPlayerTurn = false;
+        
+        // Disable all tiles
+        document.querySelectorAll('.sprint-tile').forEach(tile => {
+            tile.disabled = true;
+            tile.classList.add('disabled');
+        });
+        
+        // Update high score if needed BEFORE showing popup
         if (sprintCurrentScore > brainHighScore) {
             brainHighScore = sprintCurrentScore;
             updateDashboard();
         }
+        
+        // Show game over popup with updated high score
+        showGameOverPopup(sprintCurrentScore);
+        
         document.getElementById('startSprintBtn').disabled = false;
-        isPlayerTurn = false;
         return;
     }
     
@@ -534,10 +560,50 @@ function handleTileClick(event) {
         playerSequence = [];
         isPlayerTurn = false;
         
+        // Disable tiles while showing next sequence
+        document.querySelectorAll('.sprint-tile').forEach(tile => {
+            tile.disabled = true;
+            tile.classList.add('disabled');
+        });
+        
         setTimeout(() => {
             addToSequence();
         }, 1500);
     }
+}
+
+function showGameOverPopup(score) {
+    // Create popup modal
+    const popup = document.createElement('div');
+    popup.className = 'game-over-popup';
+    popup.innerHTML = `
+        <div class="game-over-content">
+            <h2>🧠 Game Over!</h2>
+            <div class="score-display">
+                <p class="final-score">Final Score: <span class="score-number">${score}</span></p>
+                <p class="high-score">High Score: <span class="score-number">${brainHighScore}</span></p>
+            </div>
+            <div class="game-over-message">
+                ${score > 0 ? 'Great job! You remembered the sequence!' : 'Better luck next time!'}
+            </div>
+            <button id="closeGameOverBtn" class="close-game-over-btn">Play Again</button>
+        </div>
+    `;
+    
+    // Add to page
+    document.body.appendChild(popup);
+    
+    // Add event listener for close button
+    document.getElementById('closeGameOverBtn').addEventListener('click', () => {
+        document.body.removeChild(popup);
+    });
+    
+    // Auto-close after 5 seconds
+    setTimeout(() => {
+        if (document.body.contains(popup)) {
+            document.body.removeChild(popup);
+        }
+    }, 5000);
 }
 
 // --- 5. Breathe & Balance Functions ---

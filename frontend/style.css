@@ -416,9 +416,103 @@ button:disabled { background-color: #ccc; cursor: not-allowed; animation: none; 
 
 /* Sprint styles */
 #sprint-board { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 250px; height: 250px; margin: 15px auto; }
-.sprint-tile { width: 100%; height: 100%; border-radius: 5px; opacity: 0.5; background-color: #a3cc9a; border: 3px solid #6c757d; }
+.sprint-tile { width: 100%; height: 100%; border-radius: 5px; opacity: 0.5; background-color: #a3cc9a; border: 3px solid #6c757d; cursor: pointer; transition: all 0.2s ease; }
 .sprint-tile:active { opacity: 1; transform: scale(0.95); }
+.sprint-tile.disabled { opacity: 0.3; cursor: not-allowed; background-color: #ccc; }
+.sprint-tile.disabled:active { transform: none; }
 .highlight { background-color: #ff9800 !important; opacity: 1 !important; }
+
+/* Game Over Popup Styles */
+.game-over-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.game-over-content {
+    background-color: white;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    animation: slideIn 0.3s ease-out;
+}
+
+.game-over-content h2 {
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-size: 2em;
+}
+
+.score-display {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+}
+
+.final-score, .high-score {
+    margin: 10px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.score-number {
+    color: var(--primary-color);
+    font-size: 1.4em;
+    font-weight: 700;
+}
+
+.game-over-message {
+    margin: 20px 0;
+    font-size: 1.1em;
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+.close-game-over-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.close-game-over-btn:hover {
+    background-color: #555;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
 /* Mood Watch styles */
 #mood-area { width: 100%; max-width: 400px; margin: 0 auto; }
