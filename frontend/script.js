@@ -178,21 +178,15 @@ const gameTemplates = {
     hydration: `
         ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Hydration Hero 💧</h3>
-        <div class="scientific-advice">
-            Scientific Advice: *Dehydration impacts cognitive function.* Maintaining fluid balance helps sustain energy levels and focus throughout the day.
-        </div>
         <div class="plant-container">
             <p id="plantStatus">Your little sprout is thirsty...</p>
             <div id="plant" class="plant-level-0"></div>
         </div>
-        <button id="logWaterBtn">Log 1 Glass (✨)</button>
+        <button id="logWaterBtn">Log 1 Glass</button>
     `,
     smile: `
         ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Sparkle Smile 🦷</h3>
-        <div class="scientific-advice">
-            Scientific Advice: *Oral hygiene is linked to heart health.* Regular brushing reduces chronic inflammation that can contribute to cardiovascular issues.
-        </div>
         <div class="character-container">
             <p id="smileStatus">Keep those teeth sparkling!</p>
             <div id="smile" class="smile-level-0"></div>
@@ -203,9 +197,6 @@ const gameTemplates = {
     breathe: `
         ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Breathe & Balance 🧘</h3>
-        <div class="scientific-advice">
-            Scientific Advice: *Diaphragmatic breathing activates the vagus nerve*, which is key to stimulating the body's parasympathetic (rest and digest) system, lowering heart rate and cortisol.
-        </div>
         <div id="breathing-area">
             <div id="breathing-cue">Start</div>
             <div id="breathing-circle" class="breathing-paused"></div>
@@ -216,9 +207,6 @@ const gameTemplates = {
     brain: `
         ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Brain Sprint 🧠</h3>
-        <div class="scientific-advice">
-            Scientific Advice: *Cognitive stimulation supports neuroplasticity.* Short, focused memory tasks help maintain attention and enhance the brain's ability to form new neural connections.
-        </div>
         <div id="sprint-area">
             <p>Current Score: <span id="sprint-current-score">0</span></p>
             <div id="sprint-board">
@@ -229,14 +217,11 @@ const gameTemplates = {
             </div>
             <p id="sprint-message">Press Start to begin!</p>
         </div>
-        <button id="startSprintBtn">Start Sprint (▶️)</button>
+        <button id="startSprintBtn">Start Sprint</button>
     `,
     mood: `
         ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Mood Watch 😊</h3>
-        <div class="scientific-advice">
-            Scientific Advice: *Emotional awareness is linked to better mental health.* Recognizing and naming emotions helps regulate stress responses and improves overall well-being.
-        </div>
         <div id="mood-area">
             <div id="mood-scenario">
                 <p id="scenario-text">Loading scenario...</p>
@@ -258,9 +243,6 @@ const gameTemplates = {
     affirmation: `
         ${BACK_BUTTON_HTML}
         <h3 class="game-page-title">Affirmation Builder ✨</h3>
-        <div class="scientific-advice">
-            Scientific Advice: *Positive affirmations can rewire neural pathways.* Regular practice of self-affirmation has been shown to reduce stress and improve self-esteem.
-        </div>
         <div id="affirmation-area">
             <div id="word-bank">
                 <h4>Word Bank:</h4>
