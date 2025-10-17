@@ -12,17 +12,7 @@ let affirmationWords = [];
 let userAffirmation = [];
 const WATER_GOAL = 8;
 
-// Load data from localStorage on page load
-function loadStoredData() {
-    waterLogged = parseInt(localStorage.getItem('waterLogged')) || 0;
-    brushLogged.morning = localStorage.getItem('brushMorning') === 'true';
-    brushLogged.night = localStorage.getItem('brushNight') === 'true';
-    breathingSessions = parseInt(localStorage.getItem('breathingSessions')) || 0;
-    brainHighScore = parseInt(localStorage.getItem('brainHighScore')) || 0;
-}
-
-// Initialize data loading
-loadStoredData();
+// No localStorage loading - all data comes from database via API
 
 // Authentication state
 let isAuthenticated = false;
@@ -30,22 +20,37 @@ let currentUser = null;
 
 // Initialize authentication
 async function initAuth() {
+    console.log('initAuth called, checking authentication...');
+    console.log('api.isAuthenticated():', api.isAuthenticated());
+    
     if (api.isAuthenticated()) {
         try {
+            console.log('User appears to be authenticated, fetching profile...');
             currentUser = await api.getUserProfile();
             isAuthenticated = true;
+            console.log('Profile fetched successfully:', currentUser);
+            
             hideAuthModal();
             showUserWelcome();
             updateAuthMenu();
+            
+            // Load user's existing wellness data from API
+            console.log('Loading user wellness data...');
+            await loadUserWellnessData();
         } catch (error) {
             console.error('Auth check failed:', error);
             api.logout();
             updateAuthMenu();
             showUserWelcome();
+            // Update dashboard with 0 values when auth fails
+            updateDashboard();
         }
     } else {
+        console.log('User not authenticated');
         updateAuthMenu();
         showUserWelcome();
+        // Update dashboard with 0 values when not authenticated
+        updateDashboard();
     }
 }
 
@@ -155,12 +160,14 @@ function updateDashboard() {
     document.getElementById('brushingCount').textContent = `${(brushLogged.morning ? 1 : 0) + (brushLogged.night ? 1 : 0)}/2`;
     document.getElementById('breathingCount').textContent = breathingSessions;
     document.getElementById('brainScore').textContent = brainHighScore;
-
-    localStorage.setItem('waterLogged', waterLogged);
-    localStorage.setItem('brushMorning', brushLogged.morning);
-    localStorage.setItem('brushNight', brushLogged.night);
-    localStorage.setItem('breathingSessions', breathingSessions);
-    localStorage.setItem('brainHighScore', brainHighScore);
+    
+    console.log('Dashboard updated:', {
+        waterLogged,
+        brushLogged,
+        breathingSessions,
+        brainHighScore,
+        isAuthenticated
+    });
 }
 
 
@@ -679,7 +686,7 @@ function clearAffirmation() {
     document.getElementById('generated-affirmation').classList.add('hidden');
 }
 
-function generateAffirmation() {
+async function generateAffirmation() {
     if (userAffirmation.length === 0) {
         alert('Please select some words first!');
         return;
@@ -691,14 +698,15 @@ function generateAffirmation() {
     document.getElementById('final-affirmation').textContent = generatedText;
     document.getElementById('generated-affirmation').classList.remove('hidden');
     
-    // Save to localStorage for history
-    const history = JSON.parse(localStorage.getItem('affirmationHistory') || '[]');
-    history.push({
-        userWords: userAffirmation.slice(),
-        generated: generatedText,
-        timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('affirmationHistory', JSON.stringify(history));
+    // Save affirmation to API if authenticated
+    if (isAuthenticated) {
+        try {
+            await api.submitAffirmation(userAffirmation, generatedText);
+            console.log('Affirmation saved to API');
+        } catch (error) {
+            console.error('Failed to save affirmation to API:', error);
+        }
+    }
 }
 
 // Authentication event handlers
@@ -769,6 +777,10 @@ document.addEventListener('DOMContentLoaded', function() {
             hideAuthModal();
             showUserWelcome();
             updateAuthMenu();
+            
+            // Load user's existing wellness data from API
+            await loadUserWellnessData();
+            
             showAuthStatus('Login successful!', 'success');
         } catch (error) {
             showAuthStatus('Login failed: ' + error.message, 'error');
@@ -792,11 +804,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initialize authentication
+    // Initialize authentication (this will update dashboard after loading API data)
     initAuth();
-    
-    // Update dashboard with loaded data
-    updateDashboard();
 });
 
 function showAuthStatus(message, type) {
@@ -808,6 +817,71 @@ function showAuthStatus(message, type) {
         statusDiv.textContent = '';
         statusDiv.className = 'auth-status';
     }, 3000);
+}
+
+// Load user's wellness data from API
+async function loadUserWellnessData() {
+    if (!isAuthenticated) {
+        console.log('Not authenticated, skipping API data load');
+        return;
+    }
+    
+    console.log('Loading user wellness data from API...');
+    
+    try {
+        // Load hydration data
+        const hydrationStatus = await api.getHydrationStatus();
+        waterLogged = hydrationStatus.glasses_today;
+        console.log('Hydration data loaded:', hydrationStatus);
+        
+        // Load detailed brushing data
+        let brushingDetailed;
+        try {
+            console.log('Attempting to load detailed brushing data...');
+            brushingDetailed = await api.getBrushingDetailed();
+            brushLogged.morning = brushingDetailed.morning_completed;
+            brushLogged.night = brushingDetailed.night_completed;
+            console.log('Detailed brushing data loaded:', brushingDetailed);
+        } catch (detailedError) {
+            console.log('Detailed brushing data failed, falling back to basic status...');
+            const brushingStatus = await api.getBrushingStatus();
+            const brushingCount = brushingStatus.brushing_today;
+            
+            // Determine morning/night based on count
+            if (brushingCount >= 2) {
+                brushLogged.morning = true;
+                brushLogged.night = true;
+            } else if (brushingCount === 1) {
+                brushLogged.morning = true;
+                brushLogged.night = false;
+            } else {
+                brushLogged.morning = false;
+                brushLogged.night = false;
+            }
+            console.log('Basic brushing data loaded:', brushingStatus);
+        }
+        
+        // Load breathing data
+        const breathingStatus = await api.getBreathingStatus();
+        breathingSessions = breathingStatus.sessions_today;
+        console.log('Breathing data loaded:', breathingStatus);
+        
+        // Update dashboard with loaded data
+        updateDashboard();
+        
+        console.log('User wellness data loaded from API:', {
+            waterLogged,
+            brushLogged,
+            breathingSessions
+        });
+    } catch (error) {
+        console.error('Failed to load user wellness data:', error);
+        // Reset to 0 if API fails
+        waterLogged = 0;
+        brushLogged = { morning: false, night: false };
+        breathingSessions = 0;
+        updateDashboard();
+    }
 }
 
 // Enhanced game functions with API integration
@@ -824,8 +898,9 @@ async function handleWaterLogWithAPI() {
         showAuthStatus(`Logged water! Total today: ${waterLogged}`, 'success');
     } catch (error) {
         console.error('Failed to log water:', error);
-        // Fallback to local storage
-        handleWaterLog();
+        // Fallback to local update
+        waterLogged++;
+        updateHydrationView();
     }
 }
 
@@ -842,7 +917,8 @@ async function handleMorningBrushWithAPI() {
         showAuthStatus('Morning routine logged!', 'success');
     } catch (error) {
         console.error('Failed to log brushing:', error);
-        handleMorningBrush();
+        brushLogged.morning = true;
+        updateSmileView();
     }
 }
 
@@ -859,7 +935,8 @@ async function handleNightBrushWithAPI() {
         showAuthStatus('Night routine logged!', 'success');
     } catch (error) {
         console.error('Failed to log brushing:', error);
-        handleNightBrush();
+        brushLogged.night = true;
+        updateSmileView();
     }
 }
 

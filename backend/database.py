@@ -71,4 +71,4 @@ def create_tables():
 # Initialize database
 def init_database():
     create_tables()
-    print("✅ Database initialized successfully!")
+    print("Database initialized successfully!")

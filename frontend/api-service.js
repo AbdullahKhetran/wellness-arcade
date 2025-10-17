@@ -110,6 +110,10 @@ class WellnessAPI {
         return await this.makeRequest('/api/brushing/status/');
     }
 
+    async getBrushingDetailed() {
+        return await this.makeRequest('/api/brushing/detailed/');
+    }
+
     async resetBrushing() {
         return await this.makeRequest('/api/brushing/reset/', {
             method: 'POST'

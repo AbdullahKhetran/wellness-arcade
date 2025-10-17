@@ -281,6 +281,25 @@ async def get_brushing_status(username: str = Depends(get_current_user), db: Ses
     daily_record = get_user_daily_data(username, "brushing", db)
     return {"brushing_today": daily_record.count, "goal": 2}
 
+@app.get("/api/brushing/detailed/")
+async def get_brushing_detailed(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    daily_record = get_user_daily_data(username, "brushing", db)
+    
+    # Parse the detailed data from JSON
+    brushing_sessions = json.loads(daily_record.data_json)
+    
+    # Determine which sessions were completed
+    morning_completed = any(session["session_type"] == "morning" for session in brushing_sessions)
+    night_completed = any(session["session_type"] == "night" for session in brushing_sessions)
+    
+    return {
+        "brushing_today": daily_record.count,
+        "goal": 2,
+        "morning_completed": morning_completed,
+        "night_completed": night_completed,
+        "sessions": brushing_sessions
+    }
+
 @app.post("/api/brushing/reset/")
 async def reset_brushing(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
     daily_record = get_user_daily_data(username, "brushing", db)
