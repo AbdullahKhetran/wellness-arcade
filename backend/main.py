@@ -55,6 +55,27 @@ async def serve_frontend():
 @app.on_event("startup")
 async def startup_event():
     init_database()
+    # Clean up any expired sessions on startup
+    cleanup_expired_sessions()
+
+def cleanup_expired_sessions():
+    """Clean up expired sessions from the database"""
+    db = next(get_db())
+    try:
+        expired_sessions = db.query(UserSession).filter(
+            UserSession.expires_at < datetime.utcnow()
+        ).all()
+        
+        for session in expired_sessions:
+            db.delete(session)
+        
+        db.commit()
+        print(f"Cleaned up {len(expired_sessions)} expired sessions")
+    except Exception as e:
+        print(f"Error cleaning up expired sessions: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -155,6 +176,24 @@ def get_user_daily_data(username: str, data_type: str, db: Session):
 async def ping():
     return {"message": "API is working", "timestamp": datetime.now().isoformat()}
 
+@app.post("/api/cleanup-sessions/")
+async def cleanup_sessions_endpoint(db: Session = Depends(get_db)):
+    """Endpoint to manually clean up expired sessions"""
+    try:
+        expired_sessions = db.query(UserSession).filter(
+            UserSession.expires_at < datetime.utcnow()
+        ).all()
+        
+        count = len(expired_sessions)
+        for session in expired_sessions:
+            db.delete(session)
+        
+        db.commit()
+        return {"message": f"Cleaned up {count} expired sessions"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error cleaning up sessions: {str(e)}")
+
 @app.post("/api/register/")
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     # Check if username already exists
@@ -194,11 +233,16 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
     if not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Generate session token
+    # Clean up any existing sessions for this user (both expired and valid)
+    existing_sessions = db.query(UserSession).filter(UserSession.user_id == db_user.id).all()
+    for session in existing_sessions:
+        db.delete(session)
+    
+    # Generate new session token
     session_token = generate_session_token()
     expires_at = get_token_expiry()
     
-    # Create session in database
+    # Create new session in database
     db_session = UserSession(
         session_token=session_token,
         user_id=db_user.id,

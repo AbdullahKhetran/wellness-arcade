@@ -30,6 +30,12 @@ class WellnessAPI {
             const data = await response.json();
 
             if (!response.ok) {
+                // If we get a 401 (unauthorized), clear the session token
+                if (response.status === 401) {
+                    this.sessionToken = null;
+                    localStorage.removeItem('sessionToken');
+                    console.log('Session expired, cleared token');
+                }
                 throw new Error(data.detail || 'API request failed');
             }
 
@@ -227,6 +233,18 @@ class WellnessAPI {
         } catch (error) {
             console.error('Failed to reset stats:', error);
             throw new Error('Failed to reset stats: ' + error.message);
+        }
+    }
+
+    async cleanupSessions() {
+        try {
+            const response = await this.makeRequest('/api/cleanup-sessions/', {
+                method: 'POST'
+            });
+            return response;
+        } catch (error) {
+            console.error('Failed to cleanup sessions:', error);
+            throw new Error('Failed to cleanup sessions: ' + error.message);
         }
     }
 }

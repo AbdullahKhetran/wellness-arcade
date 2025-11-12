@@ -42,6 +42,9 @@ async function initAuth() {
             await loadUserWellnessData();
         } catch (error) {
             console.error('Auth check failed:', error);
+            // Clear authentication state
+            isAuthenticated = false;
+            currentUser = null;
             api.logout();
             updateAuthMenu();
             showUserWelcome();
