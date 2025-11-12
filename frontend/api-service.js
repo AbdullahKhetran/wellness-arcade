@@ -34,7 +34,7 @@ class WellnessAPI {
                 if (response.status === 401) {
                     this.sessionToken = null;
                     localStorage.removeItem('sessionToken');
-                    console.log('Session expired, cleared token');
+                    // console.log('Session expired, cleared token');
                 }
                 throw new Error(data.detail || 'API request failed');
             }

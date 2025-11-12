@@ -23,22 +23,22 @@ let currentUser = null;
 
 // Initialize authentication
 async function initAuth() {
-    console.log('initAuth called, checking authentication...');
-    console.log('api.isAuthenticated():', api.isAuthenticated());
+    // console.log('initAuth called, checking authentication...');
+    // console.log('api.isAuthenticated():', api.isAuthenticated());
     
     if (api.isAuthenticated()) {
         try {
-            console.log('User appears to be authenticated, fetching profile...');
+            // console.log('User appears to be authenticated, fetching profile...');
             currentUser = await api.getUserProfile();
             isAuthenticated = true;
-            console.log('Profile fetched successfully:', currentUser);
+            // console.log('Profile fetched successfully:', currentUser);
             
             hideAuthModal();
             showUserWelcome();
             updateAuthMenu();
             
             // Load user's existing wellness data from API
-            console.log('Loading user wellness data...');
+            // console.log('Loading user wellness data...');
             await loadUserWellnessData();
         } catch (error) {
             console.error('Auth check failed:', error);
@@ -52,7 +52,7 @@ async function initAuth() {
             updateDashboard();
         }
     } else {
-        console.log('User not authenticated');
+        // console.log('User not authenticated');
         updateAuthMenu();
         showUserWelcome();
         // Update dashboard with 0 values when not authenticated
@@ -163,7 +163,7 @@ async function handleLogout() {
 
 const playSound = (emoji) => {
     
-    console.log(emoji); 
+    // console.log(emoji); 
 };
 
 function updateDashboard() {
@@ -174,15 +174,15 @@ function updateDashboard() {
     document.getElementById('moodCount').textContent = moodScenariosCompleted;
     document.getElementById('affirmationCount').textContent = affirmationsCreated;
     
-    console.log('Dashboard updated:', {
-        waterLogged,
-        brushLogged,
-        breathingSessions,
-        brainHighScore,
-        moodScenariosCompleted,
-        affirmationsCreated,
-        isAuthenticated
-    });
+    // console.log('Dashboard updated:', {
+    //     waterLogged,
+    //     brushLogged,
+    //     breathingSessions,
+    //     brainHighScore,
+    //     moodScenariosCompleted,
+    //     affirmationsCreated,
+    //     isAuthenticated
+    // });
 }
 
 
@@ -904,7 +904,7 @@ async function generateAffirmation() {
             const affirmationStatus = await api.getAffirmationStatus();
             affirmationsCreated = affirmationStatus.affirmations_today;
             updateDashboard();
-            console.log('Affirmation saved to API');
+            // console.log('Affirmation saved to API');
         } catch (error) {
             console.error('Failed to save affirmation to API:', error);
             // Fallback to local increment
@@ -1072,54 +1072,54 @@ function showAuthStatus(message, type) {
 // Load user's wellness data from API
 async function loadUserWellnessData() {
     if (!isAuthenticated) {
-        console.log('Not authenticated, skipping API data load');
+        // console.log('Not authenticated, skipping API data load');
         return;
     }
     
-    console.log('Loading user wellness data from API...');
+    // console.log('Loading user wellness data from API...');
     
     try {
         // Load hydration data
         const hydrationStatus = await api.getHydrationStatus();
         waterLogged = hydrationStatus.glasses_today;
-        console.log('Hydration data loaded:', hydrationStatus);
+        // console.log('Hydration data loaded:', hydrationStatus);
         
         // Load brushing data
         const brushingStatus = await api.getBrushingStatus();
         brushLogged = brushingStatus.brushing_today;
-        console.log('Brushing data loaded:', brushingStatus);
+        // console.log('Brushing data loaded:', brushingStatus);
         
         // Load breathing data
         const breathingStatus = await api.getBreathingStatus();
         breathingSessions = breathingStatus.sessions_today;
-        console.log('Breathing data loaded:', breathingStatus);
+        // console.log('Breathing data loaded:', breathingStatus);
         
         // Load brain puzzle data
         const puzzleStatus = await api.getPuzzleStatus();
         brainHighScore = puzzleStatus.high_score_today;
-        console.log('Puzzle data loaded:', puzzleStatus);
+        // console.log('Puzzle data loaded:', puzzleStatus);
         
         // Load mood data
         const moodStatus = await api.getEmotionStatus();
         moodScenariosCompleted = moodStatus.scenarios_today;
-        console.log('Mood data loaded:', moodStatus);
+        // console.log('Mood data loaded:', moodStatus);
         
         // Load affirmation data
         const affirmationStatus = await api.getAffirmationStatus();
         affirmationsCreated = affirmationStatus.affirmations_today;
-        console.log('Affirmation data loaded:', affirmationStatus);
+        // console.log('Affirmation data loaded:', affirmationStatus);
         
         // Update dashboard with loaded data
         updateDashboard();
         
-        console.log('User wellness data loaded from API:', {
-            waterLogged,
-            brushLogged,
-            breathingSessions,
-            brainHighScore,
-            moodScenariosCompleted,
-            affirmationsCreated
-        });
+        // console.log('User wellness data loaded from API:', {
+        //     waterLogged,
+        //     brushLogged,
+        //     breathingSessions,
+        //     brainHighScore,
+        //     moodScenariosCompleted,
+        //     affirmationsCreated
+        // });
     } catch (error) {
         console.error('Failed to load user wellness data:', error);
         // Reset to 0 if API fails
@@ -1230,7 +1230,7 @@ async function handleResetStats() {
         updateDashboard();
         
         showAuthStatus('All stats have been reset!', 'success');
-        console.log('All wellness stats reset successfully');
+        // console.log('All wellness stats reset successfully');
     } catch (error) {
         console.error('Failed to reset stats:', error);
         showAuthStatus('Failed to reset stats: ' + error.message, 'error');
