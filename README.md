@@ -92,10 +92,9 @@ wellness-arcade/
 │   └── README.md           # Frontend documentation
 ├── backend/                # Backend API server
 │   ├── main.py             # FastAPI application
-│   ├── start_server.py     # Backend startup script
 │   ├── requirements.txt    # Python dependencies
 │   ├── database.py         # Database configuration
-│   ├── install_database.py # Database configuration
+│   ├── install_database.py # Database setup script
 │   ├── auth_utils.py       # Authentication utilities
 │   ├── wellness_arcade.db  # SQLite database (development)
 │   └── README.md           # Backend documentation

@@ -50,7 +50,7 @@ def main():
         return False
     
     print("\n🎉 Setup complete!")
-    print("You can now start the server with: python start_server.py")
+    print("You can now start the server with: cd .. && python main.py")
     return True
 
 if __name__ == "__main__":
