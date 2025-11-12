@@ -9,6 +9,7 @@ from datetime import datetime, date
 import json
 import os
 from sqlalchemy.orm import Session
+from ai_call import generate_ai_affirmation
 
 # Import our database and auth utilities
 from database import get_db, init_database, User, UserSession, DailyWellnessData
@@ -55,6 +56,27 @@ async def serve_frontend():
 @app.on_event("startup")
 async def startup_event():
     init_database()
+    # Clean up any expired sessions on startup
+    cleanup_expired_sessions()
+
+def cleanup_expired_sessions():
+    """Clean up expired sessions from the database"""
+    db = next(get_db())
+    try:
+        expired_sessions = db.query(UserSession).filter(
+            UserSession.expires_at < datetime.utcnow()
+        ).all()
+        
+        for session in expired_sessions:
+            db.delete(session)
+        
+        db.commit()
+        print(f"Cleaned up {len(expired_sessions)} expired sessions")
+    except Exception as e:
+        print(f"Error cleaning up expired sessions: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -155,6 +177,24 @@ def get_user_daily_data(username: str, data_type: str, db: Session):
 async def ping():
     return {"message": "API is working", "timestamp": datetime.now().isoformat()}
 
+@app.post("/api/cleanup-sessions/")
+async def cleanup_sessions_endpoint(db: Session = Depends(get_db)):
+    """Endpoint to manually clean up expired sessions"""
+    try:
+        expired_sessions = db.query(UserSession).filter(
+            UserSession.expires_at < datetime.utcnow()
+        ).all()
+        
+        count = len(expired_sessions)
+        for session in expired_sessions:
+            db.delete(session)
+        
+        db.commit()
+        return {"message": f"Cleaned up {count} expired sessions"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error cleaning up sessions: {str(e)}")
+
 @app.post("/api/register/")
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     # Check if username already exists
@@ -194,11 +234,16 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
     if not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Generate session token
+    # Clean up any existing sessions for this user (both expired and valid)
+    existing_sessions = db.query(UserSession).filter(UserSession.user_id == db_user.id).all()
+    for session in existing_sessions:
+        db.delete(session)
+    
+    # Generate new session token
     session_token = generate_session_token()
     expires_at = get_token_expiry()
     
-    # Create session in database
+    # Create new session in database
     db_session = UserSession(
         session_token=session_token,
         user_id=db_user.id,
@@ -495,9 +540,10 @@ async def get_emotion_tip(mood: str):
 @app.get("/api/affirmations/words/")
 async def get_affirmation_words():
     words = [
-        "I", "am", "strong", "capable", "worthy", "loved", "brave", "confident", "peaceful", "grateful",
-        "will", "can", "deserve", "choose", "believe", "create", "achieve", "grow", "heal", "thrive",
-        "today", "always", "everyday", "moment", "journey", "life", "future", "present", "past", "now"
+        # Positive words (10)
+        "I", "am", "strong", "capable", "worthy", "brave", "confident", "grateful", "believe", "achieve",
+        # Negative words (5) - to transform into positive affirmations
+        "afraid", "doubt", "weak", "anxious", "stressed"
     ]
     return {"words": words}
 
@@ -532,11 +578,17 @@ async def get_affirmation_status(username: str = Depends(get_current_user), db: 
 
 @app.get("/api/affirmations/generate/")
 async def generate_affirmation(words: str):
-    # Simple affirmation generator
+    """
+    Generate an AI-powered affirmation based on user-selected words using AIML API.
+    If AIML API is not configured, falls back to simple generation.
+    """
+
     word_list = words.split(",")
-    base_affirmation = " ".join(word_list)
-    generated = f'"{base_affirmation}." - You have the power to create positive change in your life.'
-    return {"generated_affirmation": generated}
+    selected_words = [w.strip() for w in word_list if w.strip()]
+    
+    generated_text = await generate_ai_affirmation(selected_words)
+    
+    return {"generated_affirmation": generated_text}
 
 @app.get("/api/affirmations/history/")
 async def get_affirmation_history(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
