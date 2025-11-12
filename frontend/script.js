@@ -885,6 +885,21 @@ async function generateAffirmation() {
     generateBtn.disabled = true;
     generateBtn.textContent = 'Generated!';
     
+    // Disable all word buttons
+    document.querySelectorAll('.word-button').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    });
+    
+    // Disable clear button
+    const clearBtn = document.getElementById('clear-affirmation');
+    if (clearBtn) {
+        clearBtn.disabled = true;
+        clearBtn.style.opacity = '0.5';
+        clearBtn.style.cursor = 'not-allowed';
+    }
+    
     // Create restart button if it doesn't exist
     if (!document.getElementById('restart-affirmation-btn')) {
         const restartBtn = document.createElement('button');
@@ -929,6 +944,21 @@ function restartAffirmation() {
     const generateBtn = document.getElementById('generate-affirmation');
     generateBtn.disabled = false;
     generateBtn.textContent = 'Generate Affirmation';
+    
+    // Re-enable all word buttons
+    document.querySelectorAll('.word-button').forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    });
+    
+    // Re-enable clear button
+    const clearBtn = document.getElementById('clear-affirmation');
+    if (clearBtn) {
+        clearBtn.disabled = false;
+        clearBtn.style.opacity = '1';
+        clearBtn.style.cursor = 'pointer';
+    }
     
     // Remove restart button
     const restartBtn = document.getElementById('restart-affirmation-btn');
