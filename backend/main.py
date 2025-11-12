@@ -9,6 +9,7 @@ from datetime import datetime, date
 import json
 import os
 from sqlalchemy.orm import Session
+from ai_call import generate_ai_affirmation
 
 # Import our database and auth utilities
 from database import get_db, init_database, User, UserSession, DailyWellnessData
@@ -539,9 +540,10 @@ async def get_emotion_tip(mood: str):
 @app.get("/api/affirmations/words/")
 async def get_affirmation_words():
     words = [
-        "I", "am", "strong", "capable", "worthy", "loved", "brave", "confident", "peaceful", "grateful",
-        "will", "can", "deserve", "choose", "believe", "create", "achieve", "grow", "heal", "thrive",
-        "today", "always", "everyday", "moment", "journey", "life", "future", "present", "past", "now"
+        # Positive words (10)
+        "I", "am", "strong", "capable", "worthy", "brave", "confident", "grateful", "believe", "achieve",
+        # Negative words (5) - to transform into positive affirmations
+        "afraid", "doubt", "weak", "anxious", "stressed"
     ]
     return {"words": words}
 
@@ -576,11 +578,17 @@ async def get_affirmation_status(username: str = Depends(get_current_user), db: 
 
 @app.get("/api/affirmations/generate/")
 async def generate_affirmation(words: str):
-    # Simple affirmation generator
+    """
+    Generate an AI-powered affirmation based on user-selected words using AIML API.
+    If AIML API is not configured, falls back to simple generation.
+    """
+
     word_list = words.split(",")
-    base_affirmation = " ".join(word_list)
-    generated = f'"{base_affirmation}." - You have the power to create positive change in your life.'
-    return {"generated_affirmation": generated}
+    selected_words = [w.strip() for w in word_list if w.strip()]
+    
+    generated_text = await generate_ai_affirmation(selected_words)
+    
+    return {"generated_affirmation": generated_text}
 
 @app.get("/api/affirmations/history/")
 async def get_affirmation_history(username: str = Depends(get_current_user), db: Session = Depends(get_db)):

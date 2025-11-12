@@ -805,10 +805,12 @@ async function handleMoodSelection(event) {
 }
 
 // --- 7. Affirmation Builder Functions ---
+// Word bank is now loaded from API, but keeping fallback for offline use
 const affirmationWordBank = [
-    "I", "am", "strong", "capable", "worthy", "loved", "brave", "confident", "peaceful", "grateful",
-    "will", "can", "deserve", "choose", "believe", "create", "achieve", "grow", "heal", "thrive",
-    "today", "always", "moment", "journey", "life", "future", "present", "now"
+    // Positive words (10)
+    "I", "am", "strong", "capable", "worthy", "brave", "confident", "grateful", "believe", "achieve",
+    // Negative words (5) - to transform into positive affirmations
+    "afraid", "doubt", "weak", "anxious", "stressed"
 ];
 
 function loadAffirmationWords() {
@@ -857,14 +859,29 @@ async function generateAffirmation() {
         return;
     }
     
-    const userText = userAffirmation.join(' ');
-    const generatedText = `"${userText}." - You have the power to create positive change in your life.`;
+    // Show loading state
+    const generateBtn = document.getElementById('generate-affirmation');
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
     
-    document.getElementById('final-affirmation').textContent = generatedText;
-    document.getElementById('generated-affirmation').classList.remove('hidden');
+    let generatedText = '';
+    try {
+        // Call API to generate affirmation using AI
+        const response = await api.generateAffirmation(userAffirmation);
+        generatedText = response.generated_affirmation;
+        
+        document.getElementById('final-affirmation').textContent = generatedText;
+        document.getElementById('generated-affirmation').classList.remove('hidden');
+    } catch (error) {
+        console.error('Failed to generate affirmation:', error);
+        // Fallback to simple generation
+        const userText = userAffirmation.join(' ');
+        generatedText = `"${userText}." - You have the power to create positive change in your life.`;
+        document.getElementById('final-affirmation').textContent = generatedText;
+        document.getElementById('generated-affirmation').classList.remove('hidden');
+    }
     
     // Disable generate button and show restart button
-    const generateBtn = document.getElementById('generate-affirmation');
     generateBtn.disabled = true;
     generateBtn.textContent = 'Generated!';
     

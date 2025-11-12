@@ -203,7 +203,8 @@ class WellnessAPI {
 
     async generateAffirmation(words) {
         const wordsString = words.join(',');
-        return await this.makeRequest(`/api/affirmations/generate/?words=${wordsString}`);
+        const url = `/api/affirmations/generate/?words=${wordsString}`;
+        return await this.makeRequest(url);
     }
 
     async getAffirmationHistory() {
